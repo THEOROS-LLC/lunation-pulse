@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.astro/
+record.db
+record.db-wal
+record.db-shm
+*.zip

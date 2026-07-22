@@ -1,0 +1,15 @@
+# Lunar Pulse
+
+> A live lunation clock: the Moon's zodiacal position, lunar phase, and the
+> positions of the Sun and Moon on the tropical zodiac, computed in the
+> browser to the arcminute, every second. Verified against Swiss Ephemeris
+> (max deviation 0.069 arcminutes).
+
+## Pages
+
+- [The clock](https://lunarpulse.ai/): the living lunation clock, with the
+  current Moon sign, degree, arcminute, and phase stated in the page text.
+- [The Clairsentient Support Circle](https://lunarpulse.ai/circle/): a
+  member circle whose record ties lived experience to exact lunar position.
+- [The Gathering](https://lunarpulse.ai/gathering/): the monthly circle
+  meeting, announced under its sky.

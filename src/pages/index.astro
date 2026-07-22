@@ -1,0 +1,43 @@
+---
+import Base from '../layouts/Base.astro';
+import Cclc from '../components/Cclc.astro';
+import { getLunation } from '../cclc/lunation.js';
+
+// Build-time snapshot: crawlable text + JSON-LD, refreshed on every deploy.
+const L = getLunation(new Date());
+const sunIn = L.sunLon % 30;
+const sunSign = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'][Math.floor(L.sunLon / 30)];
+const pad = n => String(n).padStart(2, '0');
+const skyNow = `The Moon is at ${L.deg}\u00b0${pad(L.arcmin)}\u2032 ${L.sign}, in its ${L.phase.toLowerCase()} phase, and the Sun stands at ${Math.floor(sunIn)}\u00b0${pad(Math.floor((sunIn % 1) * 60))}\u2032 ${sunSign}. The clock above keeps both positions to the arcminute, every second, computed in your browser and verified against Swiss Ephemeris to within 0.069 arcminutes.`;
+const built = new Date().toISOString();
+const ld = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'WebSite', '@id': 'https://lunarpulse.ai/#site', name: 'Lunar Pulse',
+      url: 'https://lunarpulse.ai/', description: 'The sky, kept as a clock.' },
+    { '@type': 'Organization', '@id': 'https://lunarpulse.ai/#org', name: 'Lunar Pulse',
+      url: 'https://lunarpulse.ai/' },
+    { '@type': 'WebApplication', '@id': 'https://lunarpulse.ai/#app', name: 'Lunar Pulse',
+      url: 'https://lunarpulse.ai/', applicationCategory: 'ReferenceApplication',
+      operatingSystem: 'Any', isPartOf: { '@id': 'https://lunarpulse.ai/#site' },
+      dateModified: built,
+      description: 'A live lunation clock: the Moon\u2019s zodiacal position, lunar phase, and the positions of Sun and Moon on the tropical zodiac, computed to the arcminute every second.' },
+  ],
+});
+---
+<Base title="Lunar Pulse — the living lunation clock">
+  <header class="masthead">
+    <h1>Lunar Pulse</h1>
+    <p>The sky, kept as a clock.</p>
+  </header>
+  <Cclc />
+  <nav class="knights" aria-label="Pages">
+    <a href="/circle/">The Clairsentient Support Circle</a>
+    <a href="/gathering/">The Gathering</a>
+  </nav>
+  <section class="prose skynow">
+    <h2>Today\u2019s sky</h2>
+    <p>{skyNow}</p>
+  </section>
+  <script type="application/ld+json" is:inline set:html={ld} />
+</Base>

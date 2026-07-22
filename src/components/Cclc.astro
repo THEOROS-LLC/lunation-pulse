@@ -1,0 +1,15 @@
+---
+// The Central Circle Lunation Clock — persisted across every navigation.
+// transition:persist moves this exact DOM node into each incoming page,
+// so the clock mounts once per visit and never re-renders on navigation.
+---
+<div id="cclc" class="cclc" transition:persist="cclc" aria-label="Live lunation clock"></div>
+<script>
+  import { mountCCLC } from '../cclc/cclc.js';
+  const mount = () => {
+    const el = document.getElementById('cclc');
+    if (el) mountCCLC(el);   // idempotent — a persisted node returns its api
+  };
+  mount();
+  document.addEventListener('astro:page-load', mount);
+</script>

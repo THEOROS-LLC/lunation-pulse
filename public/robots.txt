@@ -1,0 +1,30 @@
+# Lunar Pulse — all doors open. The entry fee for AI answer surfaces
+# is one explicit line each; here they are.
+User-agent: *
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://lunarpulse.ai/sitemap-index.xml

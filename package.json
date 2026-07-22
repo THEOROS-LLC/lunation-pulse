@@ -1,0 +1,20 @@
+{
+  "name": "lunation-pulse",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "serve": "node server.js",
+    "audit": "node audit_record.mjs",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "3.7.3",
+    "astro": "7.1.1",
+    "astronomy-engine": "2.1.19",
+    "better-sqlite3": "12.11.1"
+  }
+}

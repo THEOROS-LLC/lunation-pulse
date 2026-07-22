@@ -1,0 +1,73 @@
+---
+import Base from '../layouts/Base.astro';
+import Cclc from '../components/Cclc.astro';
+---
+<Base title="The Clairsentient Support Circle — Lunar Pulse">
+  <div id="circlePage" class="circle-page">
+    <div class="orbitwrap">
+      <Cclc />
+      <svg id="orbit" viewBox="0 0 1320 1320" aria-label="The record, orbiting the clock"></svg>
+    </div>
+
+    <section id="locked" class="prose" hidden>
+      <h2>The Clairsentient Support Circle</h2>
+      <p>
+        This record is kept by the Circle. Members charge it with dreams, days,
+        and emotions — and the record keeps only the charge and the sky above it.
+        No name, no account, no trace of who.
+      </p>
+      <form id="unlockForm" class="unlock">
+        <input id="wordInput" type="password" placeholder="the circle word"
+               autocomplete="off" aria-label="The circle word" required />
+        <button type="submit" class="cta">Enter</button>
+      </form>
+      <p id="lockMsg" class="lockmsg" role="status"></p>
+      <p class="joinline">
+        Not yet a member?
+        <a href="https://buy.stripe.com/28E28q2Okb1i8T44mYaZi00" rel="noopener">Join — $33/mo founding rate</a>
+      </p>
+    </section>
+
+    <section id="unlocked" hidden>
+      <div id="reading" class="reading" hidden aria-live="polite"></div>
+
+      <form id="composer" class="composer">
+        <fieldset class="seals">
+          <legend>Charge the record with</legend>
+          <label><input type="radio" name="charge" value="dream" checked />
+            <svg viewBox="-10 -10 20 20" class="seal"><path d="M4 -5 A7 7 0 1 0 4 5 A5.4 5.4 0 0 1 4 -5 Z"/></svg>
+            <span>a dream</span></label>
+          <label><input type="radio" name="charge" value="day" />
+            <svg viewBox="-10 -10 20 20" class="seal"><circle r="3.4"/><circle r="7" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+            <span>a day</span></label>
+          <label><input type="radio" name="charge" value="emotion" />
+            <svg viewBox="-10 -10 20 20" class="seal"><path d="M0 5 C-6 0 -4 -5.5 0 -2.5 C4 -5.5 6 0 0 5 Z"/></svg>
+            <span>an emotion</span></label>
+        </fieldset>
+        <textarea id="chargeBody" rows="4" maxlength="2000" required
+          placeholder="What the Moon held. It enters the record exactly as written — and utterly unsigned."></textarea>
+        <input id="chargeLink" type="url" maxlength="300" placeholder="a link, if one belongs (optional)" />
+        <div class="composer-foot">
+          <button id="chargeBtn" type="submit" class="cta">Charge the record</button>
+          <span id="composeMsg" role="status"></span>
+        </div>
+      </form>
+
+      <h3 class="record-h">The Record</h3>
+      <p id="recordNote" class="snapshot"></p>
+      <div id="recordList" class="record-list"></div>
+      <p class="anon-note">The record remembers the charge, the link if given, and the exact
+        positions of the Sun and Moon at the moment of receipt. Nothing else exists to remember.</p>
+    </section>
+
+    <nav class="knights" aria-label="Pages">
+      <a href="/gathering/">The Gathering</a>
+      <a href="/">Return to the clock</a>
+    </nav>
+  </div>
+  <script>
+    import { initRecord } from '../circle/record.js';
+    initRecord();
+    document.addEventListener('astro:page-load', initRecord);
+  </script>
+</Base>

@@ -1,0 +1,60 @@
+---
+import Base from '../layouts/Base.astro';
+import Cclc from '../components/Cclc.astro';
+---
+<Base title="The Gathering — Lunar Pulse">
+  <div id="gatheringPage" class="circle-page">
+    <div class="orbitwrap">
+      <Cclc />
+    </div>
+
+    <section id="locked" class="prose" hidden>
+      <h2>The Gathering</h2>
+      <p>
+        Once a month the Circle meets under the living clock — the monthly Zoom
+        support circle. The announcement is kept here, for members.
+      </p>
+      <form id="unlockForm" class="unlock">
+        <input id="wordInput" type="password" placeholder="the circle word"
+               autocomplete="off" aria-label="The circle word" required />
+        <button type="submit" class="cta">Enter</button>
+      </form>
+      <p id="lockMsg" class="lockmsg" role="status"></p>
+      <p class="joinline">
+        Not yet a member?
+        <a href="https://buy.stripe.com/28E28q2Okb1i8T44mYaZi00" rel="noopener">Join — $33/mo founding rate</a>
+      </p>
+    </section>
+
+    <section id="unlocked" hidden>
+      <div id="nextGathering" class="gathering-hero" hidden aria-live="polite"></div>
+
+      <div id="composerWrap" hidden>
+        <form id="gComposer" class="composer">
+          <p class="seals-legend">Announce the next gathering</p>
+          <input id="gWhen" type="datetime-local" required aria-label="Meeting date and time" />
+          <textarea id="gBody" rows="4" maxlength="2000" required
+            placeholder="The announcement — theme, intention, what to bring inward."></textarea>
+          <input id="gLink" type="url" maxlength="300" placeholder="the Zoom link" />
+          <div class="composer-foot">
+            <button type="submit" class="cta">Announce</button>
+            <span id="gMsg" role="status"></span>
+          </div>
+        </form>
+      </div>
+
+      <h3 id="pastH" class="record-h" hidden>Gatherings</h3>
+      <div id="pastList" class="record-list"></div>
+    </section>
+
+    <nav class="knights" aria-label="Pages">
+      <a href="/circle/">The Record</a>
+      <a href="/">Return to the clock</a>
+    </nav>
+  </div>
+  <script>
+    import { initGathering } from '../circle/gathering.js';
+    initGathering();
+    document.addEventListener('astro:page-load', initGathering);
+  </script>
+</Base>
