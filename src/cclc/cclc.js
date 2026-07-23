@@ -1,23 +1,24 @@
-// cclc.js — the Central Circle Lunation Clock.
-// Framework-free. Mounts into any container; idempotent; survives Astro's
-// transition:persist because all state lives on the container node and in
-// closures. The clock has no stored state to lose: state = f(system time).
+// cclc.js — the Central Circle Lunation Clock, v0.5.
+// Viewport-locked: wheel sized by shorter dimension, no scrollbar ever.
+// Sun & Moon ride the inner ring edge. Traveling Moon shows phase.
+// Outer glyphs on cusps. Phase-sweep intro from new moon.
 import { getLunation, wheelAngle, wheelXY, SIGN_NAMES } from './lunation.js';
 import { SIGN_COLORS, BG, RIM, INK, INK_SOFT } from './palette.js';
 import { GLYPHS, SIGN_KEYS } from './glyphs.js';
 
 const NS = 'http://www.w3.org/2000/svg';
-const C = 500;                 // center
-const R_RIM = 452;             // the circle that draws itself
-const RING_OUT = 444;          // wedge outer radius
-const RING_IN = 272;           // wedge inner radius
-const R_GLYPH = 358;           // sign glyphs, mid-ring
-const R_PERIM = 482;           // small outer glyphs
-const R_BODIES = 414;          // Sun & Moon travel radius
-const R_MOON = 100;            // bull's-eye moon disc
-const R_DISC = 266;            // inner dark disc
-const INTRO_TTL = 12 * 3600 * 1000;   // replay intro only after >12h away
+const C = 500;
+const R_RIM = 452;
+const RING_OUT = 444;
+const RING_IN = 272;
+const R_GLYPH = 358;
+const R_PERIM = 482;
+const R_BODIES = RING_IN;          // v0.5: ride the inner ring edge
+const R_MOON = 100;
+const R_DISC = 266;
+const INTRO_TTL = 12 * 3600 * 1000;
 const LS_KEY = 'cclc.introAt';
+const BODY_MOON_R = 18;            // radius of the traveling moon disc
 
 const rad = d => d * Math.PI / 180;
 const P = (theta, r) => [C + r * Math.cos(rad(theta)), C - r * Math.sin(rad(theta))];
@@ -30,7 +31,6 @@ function h(tag, attrs = {}, parent = null) {
   return el;
 }
 
-/** Annulus sector for sign k (0=Aries). Outer arc runs visually CCW. */
 function wedgePath(k) {
   const t1 = 180 + 30 * k, t2 = t1 + 30;
   const [ax, ay] = P(t1, RING_OUT), [bx, by] = P(t2, RING_OUT);
@@ -39,22 +39,36 @@ function wedgePath(k) {
          `L ${fx(cx2)} ${fx(cy2)} A ${RING_IN} ${RING_IN} 0 0 1 ${fx(dx)} ${fx(dy)} Z`;
 }
 
-/** Shadow overlay for the bull's-eye moon at elongation e (degrees). */
-function shadowPath(e) {
+/** Shadow for the bull's-eye moon */
+function shadowPath(e, r = R_MOON) {
   e = ((e % 360) + 360) % 360;
   const eps = 0.03;
   if (e < eps) e = eps;
   if (e > 360 - eps) e = 360 - eps;
   const waxing = e < 180;
   const ce = Math.cos(rad(e));
-  const rx = Math.max(0.5, R_MOON * Math.abs(ce));
-  const top = `${C} ${C - R_MOON}`, bot = `${C} ${C + R_MOON}`;
-  // Semicircle on the shadow's home side: waxing -> left (CCW, sweep 0),
-  // waning -> right (CW, sweep 1). Terminator returns bottom -> top.
+  const rx = Math.max(0.5, r * Math.abs(ce));
+  const top = `${C} ${C - r}`, bot = `${C} ${C + r}`;
   const semiSweep = waxing ? 0 : 1;
   const termSweep = (waxing === (ce > 0)) ? 0 : 1;
-  return `M ${top} A ${R_MOON} ${R_MOON} 0 0 ${semiSweep} ${bot} ` +
-         `A ${fx(rx)} ${R_MOON} 0 0 ${termSweep} ${top} Z`;
+  return `M ${top} A ${r} ${r} 0 0 ${semiSweep} ${bot} ` +
+         `A ${fx(rx)} ${r} 0 0 ${termSweep} ${top} Z`;
+}
+
+/** Small traveling moon phase path — positioned at (0,0) */
+function travelMoonShadow(e, r = BODY_MOON_R) {
+  e = ((e % 360) + 360) % 360;
+  const eps = 0.03;
+  if (e < eps) e = eps;
+  if (e > 360 - eps) e = 360 - eps;
+  const waxing = e < 180;
+  const ce = Math.cos(rad(e));
+  const rx = Math.max(0.3, r * Math.abs(ce));
+  const top = `0 ${-r}`, bot = `0 ${r}`;
+  const semiSweep = waxing ? 0 : 1;
+  const termSweep = (waxing === (ce > 0)) ? 0 : 1;
+  return `M ${top} A ${r} ${r} 0 0 ${semiSweep} ${bot} ` +
+         `A ${fx(rx)} ${r} 0 0 ${termSweep} ${top} Z`;
 }
 
 const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th'
@@ -79,7 +93,6 @@ function buildSVG(root) {
     role: 'img', 'aria-label': 'Live lunation clock',
   }, root);
 
-  // ---- defs: gradients, filters, glyph symbols
   const defs = h('defs', {}, svg);
 
   const moonGrad = h('radialGradient', { id: 'cc-moonsurf', cx: '42%', cy: '38%', r: '75%' }, defs);
@@ -92,7 +105,6 @@ function buildSVG(root) {
   h('stop', { offset: '78%', 'stop-color': '#0e0a26' }, discGrad);
   h('stop', { offset: '100%', 'stop-color': '#0a071e' }, discGrad);
 
-  // parchment grain for the wedges (static — never animate turbulence)
   const grain = h('filter', { id: 'cc-grain', x: '-5%', y: '-5%', width: '110%', height: '110%' }, defs);
   h('feTurbulence', { type: 'fractalNoise', baseFrequency: '0.9', numOctaves: '2', seed: '11', stitchTiles: 'stitch' }, grain);
   h('feColorMatrix', { type: 'matrix', values: '0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.10 0' }, grain);
@@ -103,9 +115,9 @@ function buildSVG(root) {
   h('feColorMatrix', { type: 'matrix', values: '0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.22 0' }, moongrain);
   h('feComposite', { operator: 'atop', in2: 'SourceGraphic' }, moongrain);
 
-  for (const [name, glow] of [['sun', '#ffb84d'], ['moonb', '#a9b8ff'], ['lume', '#dfe6ff']]) {
-    const f = h('filter', { id: `cc-glow-${name}`, x: '-80%', y: '-80%', width: '260%', height: '260%' }, defs);
-    h('feDropShadow', { dx: 0, dy: 0, stdDeviation: name === 'lume' ? 10 : 7, 'flood-color': glow, 'flood-opacity': 0.85 }, f);
+  for (const [name, glow, sd] of [['sun', '#ffb84d', 12], ['moonb', '#ffffff', 14], ['lume', '#dfe6ff', 10]]) {
+    const f = h('filter', { id: `cc-glow-${name}`, x: '-100%', y: '-100%', width: '300%', height: '300%' }, defs);
+    h('feDropShadow', { dx: 0, dy: 0, stdDeviation: sd, 'flood-color': glow, 'flood-opacity': 0.9 }, f);
   }
 
   for (const key of SIGN_KEYS) {
@@ -114,24 +126,21 @@ function buildSVG(root) {
       'stroke-width': 7, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, s);
   }
 
-  // ---- layers, back to front
   const gAxes = h('g', { class: 'cc-axes' }, svg);
   const gRing = h('g', { class: 'cc-ring' }, svg);
   const gSheen = h('g', { class: 'cc-sheen' }, svg);
   const gPerim = h('g', { class: 'cc-perim' }, svg);
+  const gBodies = h('g', { class: 'cc-bodies' }, svg);
   const gBull = h('g', { class: 'cc-bull' }, svg);
   const gText = h('g', { class: 'cc-texts center-default' }, svg);
   const gAlt = h('g', { class: 'cc-altcenter' }, svg);
-  const gBodies = h('g', { class: 'cc-bodies' }, svg);
 
-  // the circle that draws itself — starts at the Aries point, runs CCW
   const rim = h('path', {
     class: 'cc-rimline',
     d: `M ${C - R_RIM} ${C} A ${R_RIM} ${R_RIM} 0 1 0 ${C + R_RIM} ${C} A ${R_RIM} ${R_RIM} 0 1 0 ${C - R_RIM} ${C}`,
     fill: 'none', stroke: RIM, 'stroke-width': 3, opacity: 0.85,
   }, svg);
 
-  // three cross groups: A draws, B and C duplicate outward counterclockwise
   const axisGroups = [];
   for (let i = 0; i < 3; i++) {
     const g = h('g', { class: `cc-axis cc-axis-${i}` }, gAxes);
@@ -141,7 +150,6 @@ function buildSVG(root) {
     axisGroups.push(g);
   }
 
-  // twelve wedges + sign glyphs + perimeter glyphs
   const wedges = [], glyphsIn = [], glyphsOut = [];
   for (let k = 0; k < 12; k++) {
     const w = h('path', {
@@ -160,7 +168,9 @@ function buildSVG(root) {
     gi.style.color = '#ffffff';
     glyphsIn.push(gi);
 
-    const [px, py] = P(mid, R_PERIM);
+    // v0.5: outer glyphs on CUSPS (sign boundaries), not centers
+    const cusp = 180 + 30 * k;   // 0=Aries cusp, 30=Taurus cusp, etc.
+    const [px, py] = P(cusp, R_PERIM);
     const go = h('use', {
       href: `#cc-g-${SIGN_KEYS[k]}`, width: 100, height: 100, class: 'cc-perimglyph',
       transform: `translate(${fx(px)} ${fx(py)}) scale(0.30) translate(-50 -50)`,
@@ -169,14 +179,13 @@ function buildSVG(root) {
     glyphsOut.push(go);
   }
 
-  // slow drifting sheen across the ring (rotates via CSS when .live)
   gSheen.style.transformOrigin = '500px 500px';
   const sheenGrad = h('radialGradient', { id: 'cc-sheeng', cx: '50%', cy: '50%', r: '50%' }, defs);
   h('stop', { offset: '0%', 'stop-color': '#ffffff', 'stop-opacity': 0.10 }, sheenGrad);
   h('stop', { offset: '100%', 'stop-color': '#ffffff', 'stop-opacity': 0 }, sheenGrad);
   h('ellipse', { cx: C + 250, cy: C - 250, rx: 300, ry: 190, fill: 'url(#cc-sheeng)' }, gSheen);
 
-  // bull's-eye: dark disc, moon, shadow, sign glyph
+  // bull's-eye
   h('circle', { cx: C, cy: C, r: R_DISC, fill: 'url(#cc-disc)' }, gBull);
   h('circle', { cx: C, cy: C, r: R_DISC, fill: 'none', stroke: RIM, 'stroke-width': 1.2, 'stroke-opacity': 0.35 }, gBull);
   const moonDisc = h('circle', {
@@ -185,7 +194,7 @@ function buildSVG(root) {
   }, gBull);
   const moonHalo = h('circle', {
     cx: C, cy: C, r: R_MOON + 4, fill: 'none', stroke: '#e9ecff',
-    'stroke-width': 2.5, 'stroke-opacity': 0.35, filter: 'url(#cc-glow-lume)', class: 'cc-moonhalo',
+    'stroke-width': 2.5, 'stroke-opacity': 0, filter: 'url(#cc-glow-lume)', class: 'cc-moonhalo',
   }, gBull);
   const shadow = h('path', {
     d: shadowPath(0.05), fill: '#0b081f', 'fill-opacity': 0.94, class: 'cc-shadow',
@@ -193,39 +202,39 @@ function buildSVG(root) {
   shadow.style.filter = 'blur(2.5px)';
   const signOnMoon = h('use', {
     href: `#cc-g-aries`, width: 100, height: 100, class: 'cc-moonsign',
-    transform: `translate(${C} ${C}) scale(0.64) translate(-50 -50)`, opacity: 0.92,
+    transform: `translate(${C} ${C}) scale(0.64) translate(-50 -50)`, opacity: 0,
   }, gBull);
 
-  // center texts
-  const tDate = h('text', { x: C, y: 330, 'text-anchor': 'middle', class: 'cc-t cc-date' }, gText);
-  const tTime = h('text', { x: C, y: 374, 'text-anchor': 'middle', class: 'cc-t cc-time' }, gText);
-  const tPhase = h('text', { x: C, y: 648, 'text-anchor': 'middle', class: 'cc-t cc-phase' }, gText);
-  const tDeg = h('text', { x: C, y: 690, 'text-anchor': 'middle', class: 'cc-t cc-deg' }, gText);
+  // center texts — sizes now relative, set via CSS
+  const tDate = h('text', { x: C, y: 340, 'text-anchor': 'middle', class: 'cc-t cc-date' }, gText);
+  const tTime = h('text', { x: C, y: 378, 'text-anchor': 'middle', class: 'cc-t cc-time' }, gText);
+  const tPhase = h('text', { x: C, y: 640, 'text-anchor': 'middle', class: 'cc-t cc-phase' }, gText);
+  const tDeg = h('text', { x: C, y: 676, 'text-anchor': 'middle', class: 'cc-t cc-deg' }, gText);
 
-  // alt center (knight hover) — hidden until setCenter is used
   const tAltTitle = h('text', { x: C, y: 470, 'text-anchor': 'middle', class: 'cc-t cc-alt-title' }, gAlt);
   const tAlt1 = h('text', { x: C, y: 520, 'text-anchor': 'middle', class: 'cc-t cc-alt-line' }, gAlt);
   const tAlt2 = h('text', { x: C, y: 556, 'text-anchor': 'middle', class: 'cc-t cc-alt-line' }, gAlt);
 
-  // Sun & Moon riding the outer ring
+  // v0.5: Sun body — golden disc + glow on inner ring
   const sun = h('g', { class: 'cc-body cc-sun' }, gBodies);
-  h('circle', { cx: 0, cy: 0, r: 34, fill: '#ffb84d', opacity: 0.16, class: 'cc-sunhalo' }, sun);
-  const sunUse = h('g', { filter: 'url(#cc-glow-sun)' }, sun);
-  h('circle', { cx: 0, cy: 0, r: 22, fill: 'none', stroke: '#ff8c1a', 'stroke-width': 7 }, sunUse);
-  h('circle', { cx: 0, cy: 0, r: 6, fill: '#ff8c1a' }, sunUse);
+  h('circle', { cx: 0, cy: 0, r: 30, fill: '#ffb84d', opacity: 0.2, class: 'cc-sunhalo', filter: 'url(#cc-glow-sun)' }, sun);
+  const sunInner = h('g', {}, sun);
+  h('circle', { cx: 0, cy: 0, r: 22, fill: 'none', stroke: '#ff8c1a', 'stroke-width': 7 }, sunInner);
+  h('circle', { cx: 0, cy: 0, r: 6, fill: '#ff8c1a' }, sunInner);
+  h('circle', { cx: 0, cy: 0, r: 26, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.5, 'stroke-opacity': 0.5, filter: 'url(#cc-glow-sun)' }, sun);
 
+  // v0.5: Traveling Moon — phase-accurate disc on inner ring
   const moonB = h('g', { class: 'cc-body cc-moonb' }, gBodies);
-  h('circle', { cx: 0, cy: 0, r: 34, fill: '#a9b8ff', opacity: 0.14, class: 'cc-moonbhalo' }, moonB);
-  const moonBUse = h('g', { filter: 'url(#cc-glow-moonb)' }, moonB);
-  h('path', { d: GLYPHS.moonBody, fill: '#cdd7ff',
-    transform: 'translate(-50 -50) scale(1.0)' }, moonBUse);
-  moonBUse.setAttribute('transform', 'rotate(-24) scale(0.62) translate(-50 -50)');
-  moonBUse.firstChild.removeAttribute('transform');
+  h('circle', { cx: 0, cy: 0, r: 30, fill: '#ffffff', opacity: 0.18, class: 'cc-moonbhalo', filter: 'url(#cc-glow-moonb)' }, moonB);
+  const moonBDisc = h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: '#e8ecff', class: 'cc-moonb-lit' }, moonB);
+  const moonBShadow = h('path', { d: travelMoonShadow(0.05), fill: '#0b081f', 'fill-opacity': 0.92, class: 'cc-moonb-shadow' }, moonB);
+  h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.8, 'stroke-opacity': 0.7 }, moonB);
+  h('circle', { cx: 0, cy: 0, r: BODY_MOON_R + 4, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.2, 'stroke-opacity': 0.4, filter: 'url(#cc-glow-moonb)' }, moonB);
 
   return {
     svg, rim, axisGroups, wedges, glyphsIn, glyphsOut, gSheen, gBull, gText, gAlt,
-    gBodies, sun, moonB, shadow, signOnMoon, tDate, tTime, tPhase, tDeg,
-    tAltTitle, tAlt1, tAlt2,
+    gBodies, sun, moonB, moonBShadow, shadow, signOnMoon, moonHalo,
+    tDate, tTime, tPhase, tDeg, tAltTitle, tAlt1, tAlt2,
   };
 }
 
@@ -247,7 +256,11 @@ function makeTicker(refs) {
       last.signIdx = L.signIdx;
     }
     const eR = Math.round(L.elong * 50);
-    if (eR !== last.eR) { refs.shadow.setAttribute('d', shadowPath(L.elong)); last.eR = eR; }
+    if (eR !== last.eR) {
+      refs.shadow.setAttribute('d', shadowPath(L.elong));
+      refs.moonBShadow.setAttribute('d', travelMoonShadow(L.elong));
+      last.eR = eR;
+    }
     const [sx, sy] = wheelXY(L.sunLon, R_BODIES);
     refs.sun.setAttribute('transform', `translate(${fx(sx)} ${fx(sy)})`);
     const [mx, my] = wheelXY(L.moonLon, R_BODIES);
@@ -274,16 +287,15 @@ function playIntro(refs, ticker) {
   refs.rim.style.strokeDasharray = `${rimLen}`;
   A(refs.rim, { strokeDashoffset: [rimLen, 0] }, { duration: 820, easing: 'cubic-bezier(.4,0,.2,1)' });
 
-  // axes draw, then the medicine wheel duplicates counterclockwise
   refs.axisGroups.forEach((g, i) => { if (i > 0) g.style.opacity = 0; });
   for (const g of refs.axisGroups) {
     for (const p of g.children) {
       const len = 2 * R_RIM;
       p.style.strokeDasharray = `${len}`;
-      p.style.strokeDashoffset = i0(g) === 0 ? `${len}` : '0';
+      p.style.strokeDashoffset = axIdx(g) === 0 ? `${len}` : '0';
     }
   }
-  function i0(g) { return refs.axisGroups.indexOf(g); }
+  function axIdx(g) { return refs.axisGroups.indexOf(g); }
   const [axH, axV] = refs.axisGroups[0].children;
   A(axH, { strokeDashoffset: [2 * R_RIM, 0] }, { duration: 250, delay: 830, easing: 'ease-out' });
   A(axV, { strokeDashoffset: [2 * R_RIM, 0] }, { duration: 250, delay: 1090, easing: 'ease-out' });
@@ -292,7 +304,6 @@ function playIntro(refs, ticker) {
   A(refs.axisGroups[2], { opacity: [0, 1], transform: ['rotate(0deg)', 'rotate(-60deg)'] },
     { duration: 570, delay: 1440, easing: 'cubic-bezier(.3,.7,.3,1)' });
 
-  // wedges stretch inner->outer, Aries -> Pisces, a counterclockwise spiral
   refs.wedges.forEach((w, k) => {
     w.style.opacity = 0;
     A(w, { opacity: [0, 1], transform: ['scale(0.62)', 'scale(1)'] },
@@ -308,34 +319,51 @@ function playIntro(refs, ticker) {
   });
   A(refs.axisGroups[0].parentNode, { opacity: [1, 0] }, { duration: 420, delay: 2720 });
 
-  // bull's-eye appears dark, then the sky catches up: new moon -> now
+  // v0.5: bull's-eye phase sweep from new moon to current
   refs.gBull.style.opacity = 0;
   refs.gText.style.opacity = 0;
   refs.gBodies.style.opacity = 0;
   refs.shadow.setAttribute('d', shadowPath(0.05));
+  refs.moonHalo.setAttribute('stroke-opacity', '0');
+  refs.signOnMoon.setAttribute('opacity', '0');
+
   A(refs.gBull, { opacity: [0, 1] }, { duration: 300, delay: 2980, easing: 'ease-out' });
-  A(refs.gBodies, { opacity: [0, 1] }, { duration: 480, delay: 3080, easing: 'ease-out' });
-  [refs.tDate, refs.tTime, refs.tPhase, refs.tDeg].forEach((t, i) => {
-    t.style.opacity = 0;
-    A(t, { opacity: [0, 1] }, { duration: 380, delay: 3120 + 80 * i, easing: 'ease-out' });
-  });
-  A(refs.gText, { opacity: [0, 1] }, { duration: 10, delay: 3100 });
 
   const targetE = getLunation(new Date()).elong;
-  const t0 = performance.now() + 3050, dur = 900;
+  const sweepStart = 3050, sweepDur = 1200;
   function sweep(nowT) {
-    const t = Math.min(1, Math.max(0, (nowT - t0) / dur));
-    if (t > 0) refs.shadow.setAttribute('d', shadowPath(0.05 + easeOutCubic(t) * (targetE - 0.05)));
-    if (t < 1) requestAnimationFrame(sweep);
+    const t = Math.min(1, Math.max(0, (nowT - (performance.now() - nowT + sweepStart)) / sweepDur));
+    const elapsed = nowT - sweepAnchor;
+    const progress = Math.min(1, Math.max(0, elapsed / sweepDur));
+    const eased = easeOutCubic(progress);
+    const currentE = 0.05 + eased * (targetE - 0.05);
+    refs.shadow.setAttribute('d', shadowPath(currentE));
+    refs.moonBShadow.setAttribute('d', travelMoonShadow(currentE));
+    if (progress < 1) requestAnimationFrame(sweep);
+    else {
+      // phase landed — fade in glow, outline, sign
+      A(refs.moonHalo, { strokeOpacity: [0, 0.35] }, { duration: 500, easing: 'ease-out' });
+      A(refs.signOnMoon, { opacity: [0, 0.92] }, { duration: 500, easing: 'ease-out' });
+    }
   }
-  requestAnimationFrame(sweep);
+  let sweepAnchor = 0;
+  setTimeout(() => { sweepAnchor = performance.now(); requestAnimationFrame(sweep); }, sweepStart);
 
-  setTimeout(() => { refs.svg.classList.add('live'); ticker.resync(); }, 3960);
+  A(refs.gBodies, { opacity: [0, 1] }, { duration: 480, delay: 3200, easing: 'ease-out' });
+  [refs.tDate, refs.tTime, refs.tPhase, refs.tDeg].forEach((t, i) => {
+    t.style.opacity = 0;
+    A(t, { opacity: [0, 1] }, { duration: 380, delay: 3400 + 80 * i, easing: 'ease-out' });
+  });
+  A(refs.gText, { opacity: [0, 1] }, { duration: 10, delay: 3380 });
+
+  setTimeout(() => { refs.svg.classList.add('live'); ticker.resync(); }, 4300);
 }
 
 function instantReveal(refs, ticker) {
   refs.axisGroups.forEach((g, i) => { if (i > 0) { g.style.opacity = 1; g.style.transform = `rotate(${-30 * i}deg)`; } });
   refs.axisGroups[0].parentNode.style.opacity = 0;
+  refs.moonHalo.setAttribute('stroke-opacity', '0.35');
+  refs.signOnMoon.setAttribute('opacity', '0.92');
   refs.svg.classList.add('live');
   ticker.start();
 }
@@ -346,7 +374,7 @@ export function mountCCLC(container) {
 
   const refs = buildSVG(container);
   const ticker = makeTicker(refs);
-  ticker.render(new Date());   // first paint is already correct
+  ticker.render(new Date());
 
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let lastIntro = 0;

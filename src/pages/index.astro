@@ -3,7 +3,6 @@ import Base from '../layouts/Base.astro';
 import Cclc from '../components/Cclc.astro';
 import { getLunation } from '../cclc/lunation.js';
 
-// Build-time snapshot: crawlable text + JSON-LD, refreshed on every deploy.
 const L = getLunation(new Date());
 const sunIn = L.sunLon % 30;
 const sunSign = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'][Math.floor(L.sunLon / 30)];
@@ -25,19 +24,22 @@ const ld = JSON.stringify({
   ],
 });
 ---
-<Base title="Lunar Pulse — the living lunation clock">
-  <header class="masthead">
-    <h1>Lunar Pulse</h1>
-    <p>The sky, kept as a clock.</p>
-  </header>
+<Base title="Lunar Pulse \u2014 the living lunation clock">
+  <div class="page-aside page-aside-top">
+    <header class="masthead">
+      <h1>Lunar Pulse</h1>
+      <p>The sky, kept as a clock.</p>
+    </header>
+  </div>
   <Cclc />
-  <nav class="knights" aria-label="Pages">
-    <a href="/circle/">The Clairsentient Support Circle</a>
-    <a href="/gathering/">The Gathering</a>
-  </nav>
-  <section class="prose skynow">
-    <h2>Today\u2019s sky</h2>
-    <p>{skyNow}</p>
-  </section>
+  <div class="page-aside">
+    <nav class="knights" aria-label="Pages">
+      <a href="/circle/">The Clairsentient Support Circle</a>
+      <a href="/gathering/">The Gathering</a>
+    </nav>
+    <section class="skynow">
+      <p class="snapshot">{skyNow}</p>
+    </section>
+  </div>
   <script type="application/ld+json" is:inline set:html={ld} />
 </Base>
