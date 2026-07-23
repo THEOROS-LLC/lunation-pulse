@@ -201,3 +201,11 @@ a:focus-visible { outline: 2px solid var(--rim); outline-offset: 4px; border-rad
   color-scheme: dark;
 }
 .composer input[type=datetime-local]:focus { outline: none; border-color: var(--ink); }
+
+/* ---------- Aspect overlay ---------- */
+.cc-aspect { pointer-events: none; transition: opacity .35s ease; }
+.cc-aspect-line { stroke-linecap: round; }
+.cc-aspect-glyph { font-family: var(--serif); }
+.cc-aspect-name { font-family: var(--serif); letter-spacing: 3px; font-weight: 300; }
+.cc-aspect-deg { font-family: var(--serif); letter-spacing: 1px; font-weight: 400; }
+.cc-body { pointer-events: auto; }

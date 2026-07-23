@@ -5,6 +5,7 @@
 import { getLunation, wheelAngle, wheelXY, SIGN_NAMES } from './lunation.js';
 import { SIGN_COLORS, BG, RIM, INK, INK_SOFT } from './palette.js';
 import { GLYPHS, SIGN_KEYS } from './glyphs.js';
+import { findAspect } from './aspects.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 const C = 500;
@@ -226,47 +227,35 @@ function buildSVG(root) {
   const tAlt1 = h('text', { x: C, y: 520, 'text-anchor': 'middle', class: 'cc-t cc-alt-line' }, gAlt);
   const tAlt2 = h('text', { x: C, y: 556, 'text-anchor': 'middle', class: 'cc-t cc-alt-line' }, gAlt);
 
-  // Sun body — white outline glow like the moon, dark orange circumpunct,
-  // two rotating ray layers with radial fade mask, breathing scale
+  // Sun body — simple two-layer rays, white glow outline, dark orange circumpunct
   const sun = h('g', { class: 'cc-body cc-sun' }, gBodies);
-
-  // radial mask: rays fade from opaque near sun → transparent at tips
-  const rayMask = h('mask', { id: 'cc-raymask' }, defs);
-  const rayMaskGrad = h('radialGradient', { id: 'cc-raymask-g', cx: '50%', cy: '50%', r: '50%' }, defs);
-  h('stop', { offset: '40%', 'stop-color': '#ffffff' }, rayMaskGrad);
-  h('stop', { offset: '100%', 'stop-color': '#000000' }, rayMaskGrad);
-  h('circle', { cx: 0, cy: 0, r: 50, fill: 'url(#cc-raymask-g)' }, rayMask);
-
-  // layer A: 24 rays, CW
-  const rgA = h('g', { class: 'cc-sunrays-a', mask: 'url(#cc-raymask)' }, sun);
-  for (let i = 0; i < 24; i++) {
-    const ang = (i * 15) * Math.PI / 180;
-    const x1 = Math.cos(ang) * (BODY_MOON_R + 3), y1 = Math.sin(ang) * (BODY_MOON_R + 3);
-    const x2 = Math.cos(ang) * (BODY_MOON_R + 22), y2 = Math.sin(ang) * (BODY_MOON_R + 22);
-    h('line', { x1: fx(x1), y1: fx(y1), x2: fx(x2), y2: fx(y2),
-      stroke: '#ffcc66', 'stroke-width': i % 2 === 0 ? 2.0 : 1.0,
-      'stroke-opacity': i % 2 === 0 ? 0.22 : 0.14, 'stroke-linecap': 'round' }, rgA);
-  }
-  // layer B: 12 rays, CCW
-  const rgB = h('g', { class: 'cc-sunrays-b', mask: 'url(#cc-raymask)' }, sun);
+  // layer A: 12 rays, CW, more opaque
+  const rgA = h('g', { class: 'cc-sunrays-a' }, sun);
   for (let i = 0; i < 12; i++) {
-    const ang = (i * 30 + 7.5) * Math.PI / 180;
-    const x1 = Math.cos(ang) * (BODY_MOON_R + 4), y1 = Math.sin(ang) * (BODY_MOON_R + 4);
-    const x2 = Math.cos(ang) * (BODY_MOON_R + 20), y2 = Math.sin(ang) * (BODY_MOON_R + 20);
+    const ang = (i * 30) * Math.PI / 180;
+    const x1 = Math.cos(ang) * (BODY_MOON_R + 3), y1 = Math.sin(ang) * (BODY_MOON_R + 3);
+    const x2 = Math.cos(ang) * (BODY_MOON_R + 16), y2 = Math.sin(ang) * (BODY_MOON_R + 16);
     h('line', { x1: fx(x1), y1: fx(y1), x2: fx(x2), y2: fx(y2),
-      stroke: '#ffcc66', 'stroke-width': 1.4,
-      'stroke-opacity': 0.16, 'stroke-linecap': 'round' }, rgB);
+      stroke: '#ffcc66', 'stroke-width': 1.6,
+      'stroke-opacity': 0.14, 'stroke-linecap': 'round' }, rgA);
   }
-
-  // white glow outline (like the Moon's)
+  // layer B: 12 rays offset, CCW, less opaque
+  const rgB = h('g', { class: 'cc-sunrays-b' }, sun);
+  for (let i = 0; i < 12; i++) {
+    const ang = (i * 30 + 15) * Math.PI / 180;
+    const x1 = Math.cos(ang) * (BODY_MOON_R + 4), y1 = Math.sin(ang) * (BODY_MOON_R + 4);
+    const x2 = Math.cos(ang) * (BODY_MOON_R + 14), y2 = Math.sin(ang) * (BODY_MOON_R + 14);
+    h('line', { x1: fx(x1), y1: fx(y1), x2: fx(x2), y2: fx(y2),
+      stroke: '#ffcc66', 'stroke-width': 1.0,
+      'stroke-opacity': 0.08, 'stroke-linecap': 'round' }, rgB);
+  }
+  // white glow outline
   h('circle', { cx: 0, cy: 0, r: BODY_MOON_R + 4, fill: 'none', stroke: '#ffffff',
     'stroke-width': 2.5, 'stroke-opacity': 0.35, filter: 'url(#cc-glow-sun)', class: 'cc-sun-outline' }, sun);
-  h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: '#ffffff' }, sun);  // solid white backing
-  // dark orange circumpunct — ring and dot same color
+  h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: '#ffffff' }, sun);
   const SUN_ORANGE = '#d97014';
   h('circle', { cx: 0, cy: 0, r: BODY_MOON_R - 1, fill: 'none', stroke: SUN_ORANGE, 'stroke-width': 4.5 }, sun);
   h('circle', { cx: 0, cy: 0, r: 4, fill: SUN_ORANGE }, sun);
-  // outer white ring
   h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.8, 'stroke-opacity': 0.7 }, sun);
 
   // Traveling Moon — phase-accurate disc, three breathing halo layers
@@ -279,10 +268,22 @@ function buildSVG(root) {
   h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.8, 'stroke-opacity': 0.7 }, moonB);
   h('circle', { cx: 0, cy: 0, r: BODY_MOON_R + 4, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.2, 'stroke-opacity': 0.4, filter: 'url(#cc-glow-moonb)' }, moonB);
 
+  // ---- aspect overlay (shown on Sun/Moon hover)
+  const gAspect = h('g', { class: 'cc-aspect', opacity: 0 }, svg);
+  const aspectLine = h('line', { x1: C, y1: C, x2: C, y2: C,
+    stroke: '#ffffff', 'stroke-width': 2.5, 'stroke-opacity': 0.85, class: 'cc-aspect-line' }, gAspect);
+  const aspectGlyph = h('text', { x: C, y: C + 12, 'text-anchor': 'middle',
+    class: 'cc-t cc-aspect-glyph', 'font-size': '60' }, gAspect);
+  const aspectName = h('text', { x: C, y: C - 50, 'text-anchor': 'middle',
+    class: 'cc-t cc-aspect-name', 'font-size': '18' }, gAspect);
+  const aspectDeg = h('text', { x: C, y: C + 60, 'text-anchor': 'middle',
+    class: 'cc-t cc-aspect-deg', 'font-size': '22' }, gAspect);
+
   return {
     svg, rim, axisGroups, wedges, glyphsIn, glyphsOut, gSheen, gBull, gText, gAlt,
     gBodies, sun, moonB, moonBShadow, shadow, signOnMoon, moonHalo,
     tDate, tTime, tTimeDigits, tTimeSuffix, tPhase, tDeg, tAltTitle, tAlt1, tAlt2,
+    gAspect, aspectLine, aspectGlyph, aspectName, aspectDeg,
   };
 }
 
@@ -440,6 +441,74 @@ export function mountCCLC(container) {
     if (!document.hidden) ticker.resync();
     document.documentElement.classList.toggle('cc-paused', document.hidden);
   });
+
+  // ---- aspect hover: Sun or Moon → reveal aspect line + center info
+  let aspectShowing = false;
+  function showAspect() {
+    const L = getLunation(new Date());
+    const hit = findAspect(L.elong);
+    // fade out bull's-eye content
+    refs.gBull.style.transition = 'opacity .35s ease';
+    refs.gText.style.transition = 'opacity .35s ease';
+    refs.gBull.style.opacity = '0.15';
+    refs.gText.style.opacity = '0';
+    if (hit && !hit.aspect.noLine) {
+      // draw line from Moon to Sun through the inner disc
+      const [mx, my] = wheelXY(L.moonLon, R_BODIES);
+      const [sx, sy] = wheelXY(L.sunLon, R_BODIES);
+      refs.aspectLine.setAttribute('x1', fx(mx));
+      refs.aspectLine.setAttribute('y1', fx(my));
+      refs.aspectLine.setAttribute('x2', fx(sx));
+      refs.aspectLine.setAttribute('y2', fx(sy));
+      refs.aspectLine.setAttribute('stroke', hit.aspect.color);
+      refs.aspectLine.setAttribute('stroke-dasharray', hit.approaching ? 'none' : '8 6');
+      // center info
+      const label = hit.approaching ? 'APPROACHING' : 'SEPARATING';
+      refs.aspectName.textContent = `The Moon is ${label}`;
+      refs.aspectGlyph.textContent = hit.aspect.glyph;
+      refs.aspectDeg.textContent = `${hit.aspect.name} the Sun`;
+      refs.aspectName.setAttribute('fill', hit.aspect.color);
+      refs.aspectGlyph.setAttribute('fill', hit.aspect.color);
+      refs.aspectDeg.setAttribute('fill', hit.aspect.color);
+    } else if (hit && hit.aspect.noLine) {
+      // conjunction — no line, just label
+      refs.aspectLine.setAttribute('stroke-opacity', '0');
+      refs.aspectName.textContent = 'The Moon is in';
+      refs.aspectGlyph.textContent = hit.aspect.glyph;
+      refs.aspectDeg.textContent = `${hit.aspect.name} with the Sun`;
+      refs.aspectName.setAttribute('fill', hit.aspect.color);
+      refs.aspectGlyph.setAttribute('fill', hit.aspect.color);
+      refs.aspectDeg.setAttribute('fill', hit.aspect.color);
+    } else {
+      refs.aspectLine.setAttribute('stroke-opacity', '0');
+      refs.aspectName.textContent = '';
+      refs.aspectGlyph.textContent = 'No major aspect';
+      refs.aspectDeg.textContent = '';
+      refs.aspectGlyph.setAttribute('fill', INK_SOFT);
+      refs.aspectGlyph.setAttribute('font-size', '20');
+    }
+    refs.gAspect.style.transition = 'opacity .35s ease';
+    refs.gAspect.style.opacity = '1';
+    aspectShowing = true;
+  }
+  function hideAspect() {
+    refs.gBull.style.opacity = '1';
+    refs.gText.style.opacity = '1';
+    refs.gAspect.style.opacity = '0';
+    refs.aspectGlyph.setAttribute('font-size', '60');
+    refs.aspectLine.setAttribute('stroke-opacity', '0.85');
+    aspectShowing = false;
+  }
+  // attach to both Sun and Moon body groups
+  for (const body of [refs.sun, refs.moonB]) {
+    body.style.cursor = 'pointer';
+    body.addEventListener('mouseenter', showAspect);
+    body.addEventListener('mouseleave', hideAspect);
+    body.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (aspectShowing) hideAspect(); else showAspect();
+    }, { passive: false });
+  }
 
   const api = {
     setCenter(alt) {
