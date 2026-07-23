@@ -51,10 +51,10 @@ html, body {
 /* ---- clock text: sized relative to viewBox (SVG units) ---- */
 .cclc-svg text { font-family: var(--serif); }
 .cc-t { fill: var(--ink); }
-.cc-date  { font-size: 26px; letter-spacing: 1px; font-weight: 300; }
-.cc-time  { font-size: 32px; font-weight: 500; letter-spacing: 1px; }
+.cc-date  { font-size: 26px; letter-spacing: 3px; font-weight: 300; }
+.cc-time  { font-size: 32px; font-weight: 400; letter-spacing: 2px; }
 .cc-phase { font-size: 20px; letter-spacing: 6px; fill: var(--ink-soft); font-weight: 300; }
-.cc-deg   { font-size: 24px; fill: #d9e0ff; letter-spacing: .5px; font-weight: 400; }
+.cc-deg   { font-size: 24px; fill: #d9e0ff; letter-spacing: 2px; font-weight: 300; }
 .cc-alt-title { font-size: 28px; letter-spacing: 4px; }
 .cc-alt-line  { font-size: 20px; fill: var(--ink-soft); }
 

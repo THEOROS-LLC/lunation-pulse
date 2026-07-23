@@ -96,9 +96,9 @@ function buildSVG(root) {
   const defs = h('defs', {}, svg);
 
   const moonGrad = h('radialGradient', { id: 'cc-moonsurf', cx: '42%', cy: '38%', r: '75%' }, defs);
-  h('stop', { offset: '0%', 'stop-color': '#f2f0e6' }, moonGrad);
-  h('stop', { offset: '55%', 'stop-color': '#cfcabc' }, moonGrad);
-  h('stop', { offset: '100%', 'stop-color': '#8f8a80' }, moonGrad);
+  h('stop', { offset: '0%', 'stop-color': '#f5eed4' }, moonGrad);
+  h('stop', { offset: '55%', 'stop-color': '#d4c9a0' }, moonGrad);
+  h('stop', { offset: '100%', 'stop-color': '#9a8e6a' }, moonGrad);
 
   const discGrad = h('radialGradient', { id: 'cc-disc', cx: '50%', cy: '46%', r: '72%' }, defs);
   h('stop', { offset: '0%', 'stop-color': '#181236' }, discGrad);
@@ -112,10 +112,10 @@ function buildSVG(root) {
 
   const moongrain = h('filter', { id: 'cc-moongrain', x: '-10%', y: '-10%', width: '120%', height: '120%' }, defs);
   h('feTurbulence', { type: 'fractalNoise', baseFrequency: '0.55', numOctaves: '3', seed: '4', stitchTiles: 'stitch' }, moongrain);
-  h('feColorMatrix', { type: 'matrix', values: '0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.22 0' }, moongrain);
+  h('feColorMatrix', { type: 'matrix', values: '0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.32 0' }, moongrain);
   h('feComposite', { operator: 'atop', in2: 'SourceGraphic' }, moongrain);
 
-  for (const [name, glow, sd] of [['sun', '#ffb84d', 12], ['moonb', '#ffffff', 14], ['lume', '#dfe6ff', 10]]) {
+  for (const [name, glow, sd] of [['sun', '#ffffff', 14], ['moonb', '#ffffff', 14], ['lume', '#dfe6ff', 10]]) {
     const f = h('filter', { id: `cc-glow-${name}`, x: '-100%', y: '-100%', width: '300%', height: '300%' }, defs);
     h('feDropShadow', { dx: 0, dy: 0, stdDeviation: sd, 'flood-color': glow, 'flood-opacity': 0.9 }, f);
   }
@@ -130,10 +130,10 @@ function buildSVG(root) {
   const gRing = h('g', { class: 'cc-ring' }, svg);
   const gSheen = h('g', { class: 'cc-sheen' }, svg);
   const gPerim = h('g', { class: 'cc-perim' }, svg);
-  const gBodies = h('g', { class: 'cc-bodies' }, svg);
   const gBull = h('g', { class: 'cc-bull' }, svg);
   const gText = h('g', { class: 'cc-texts center-default' }, svg);
   const gAlt = h('g', { class: 'cc-altcenter' }, svg);
+  const gBodies = h('g', { class: 'cc-bodies' }, svg);  // topmost layer
 
   const rim = h('path', {
     class: 'cc-rimline',
@@ -215,13 +215,14 @@ function buildSVG(root) {
   const tAlt1 = h('text', { x: C, y: 520, 'text-anchor': 'middle', class: 'cc-t cc-alt-line' }, gAlt);
   const tAlt2 = h('text', { x: C, y: 556, 'text-anchor': 'middle', class: 'cc-t cc-alt-line' }, gAlt);
 
-  // v0.5: Sun body — golden disc + glow on inner ring
+  // Sun body — same circumference as traveling Moon, white glow identical
   const sun = h('g', { class: 'cc-body cc-sun' }, gBodies);
-  h('circle', { cx: 0, cy: 0, r: 30, fill: '#ffb84d', opacity: 0.2, class: 'cc-sunhalo', filter: 'url(#cc-glow-sun)' }, sun);
+  h('circle', { cx: 0, cy: 0, r: 30, fill: '#ffffff', opacity: 0.18, class: 'cc-sunhalo', filter: 'url(#cc-glow-sun)' }, sun);
   const sunInner = h('g', {}, sun);
-  h('circle', { cx: 0, cy: 0, r: 22, fill: 'none', stroke: '#ff8c1a', 'stroke-width': 7 }, sunInner);
-  h('circle', { cx: 0, cy: 0, r: 6, fill: '#ff8c1a' }, sunInner);
-  h('circle', { cx: 0, cy: 0, r: 26, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.5, 'stroke-opacity': 0.5, filter: 'url(#cc-glow-sun)' }, sun);
+  h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: 'none', stroke: '#ff8c1a', 'stroke-width': 5 }, sunInner);
+  h('circle', { cx: 0, cy: 0, r: 4.5, fill: '#ff8c1a' }, sunInner);
+  h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.8, 'stroke-opacity': 0.7 }, sun);
+  h('circle', { cx: 0, cy: 0, r: BODY_MOON_R + 4, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.2, 'stroke-opacity': 0.4, filter: 'url(#cc-glow-sun)' }, sun);
 
   // v0.5: Traveling Moon — phase-accurate disc on inner ring
   const moonB = h('g', { class: 'cc-body cc-moonb' }, gBodies);
