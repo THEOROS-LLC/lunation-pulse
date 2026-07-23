@@ -76,8 +76,17 @@ const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? 'th'
 
 const timeFmt = new Intl.DateTimeFormat('en-US', {
   hour: 'numeric', minute: '2-digit', second: '2-digit',
-  hour12: true, timeZoneName: 'short',
+  hour12: true,
 });
+const tzFmt = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' });
+function timeParts(d) {
+  const digits = timeFmt.format(d);                         // "4:31:10 AM"
+  const tz = tzFmt.formatToParts(d).find(p => p.type === 'timeZoneName')?.value || '';
+  // split off AM/PM
+  const m = digits.match(/^([\d:]+)\s*(AM|PM)$/i);
+  if (m) return { nums: m[1], suffix: ` ${m[2]} ${tz}` };
+  return { nums: digits, suffix: ` ${tz}` };
+}
 const dateFmt = new Intl.DateTimeFormat('en-US', {
   weekday: 'long', month: 'long', day: 'numeric',
 });
@@ -208,6 +217,8 @@ function buildSVG(root) {
   // center texts — sizes now relative, set via CSS
   const tDate = h('text', { x: C, y: 340, 'text-anchor': 'middle', class: 'cc-t cc-date' }, gText);
   const tTime = h('text', { x: C, y: 378, 'text-anchor': 'middle', class: 'cc-t cc-time' }, gText);
+  const tTimeDigits = h('tspan', { class: 'cc-time-digits' }, tTime);
+  const tTimeSuffix = h('tspan', { class: 'cc-time-suffix' }, tTime);
   const tPhase = h('text', { x: C, y: 640, 'text-anchor': 'middle', class: 'cc-t cc-phase' }, gText);
   const tDeg = h('text', { x: C, y: 676, 'text-anchor': 'middle', class: 'cc-t cc-deg' }, gText);
 
@@ -215,18 +226,33 @@ function buildSVG(root) {
   const tAlt1 = h('text', { x: C, y: 520, 'text-anchor': 'middle', class: 'cc-t cc-alt-line' }, gAlt);
   const tAlt2 = h('text', { x: C, y: 556, 'text-anchor': 'middle', class: 'cc-t cc-alt-line' }, gAlt);
 
-  // Sun body — same circumference as traveling Moon, white glow identical
+  // Sun body — solid white fill, circumpunct on top, two rotating ray layers
   const sun = h('g', { class: 'cc-body cc-sun' }, gBodies);
+  // rays: two groups of 12 lines each, rotating opposite directions via CSS
+  for (const cls of ['cc-sunrays-a', 'cc-sunrays-b']) {
+    const rg = h('g', { class: cls }, sun);
+    for (let i = 0; i < 12; i++) {
+      const ang = (i * 30) * Math.PI / 180;
+      const x1 = Math.cos(ang) * (BODY_MOON_R + 5), y1 = Math.sin(ang) * (BODY_MOON_R + 5);
+      const x2 = Math.cos(ang) * (BODY_MOON_R + 18), y2 = Math.sin(ang) * (BODY_MOON_R + 18);
+      h('line', { x1: fx(x1), y1: fx(y1), x2: fx(x2), y2: fx(y2),
+        stroke: '#ffcc66', 'stroke-width': i % 2 === 0 ? 2.2 : 1.2,
+        'stroke-opacity': i % 2 === 0 ? 0.22 : 0.12, 'stroke-linecap': 'round' }, rg);
+    }
+  }
   h('circle', { cx: 0, cy: 0, r: 30, fill: '#ffffff', opacity: 0.18, class: 'cc-sunhalo', filter: 'url(#cc-glow-sun)' }, sun);
+  h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: '#ffffff' }, sun);  // solid white backing
   const sunInner = h('g', {}, sun);
   h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: 'none', stroke: '#ff8c1a', 'stroke-width': 5 }, sunInner);
   h('circle', { cx: 0, cy: 0, r: 4.5, fill: '#ff8c1a' }, sunInner);
   h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.8, 'stroke-opacity': 0.7 }, sun);
-  h('circle', { cx: 0, cy: 0, r: BODY_MOON_R + 4, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.2, 'stroke-opacity': 0.4, filter: 'url(#cc-glow-sun)' }, sun);
+  h('circle', { cx: 0, cy: 0, r: BODY_MOON_R + 4, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.2, 'stroke-opacity': 0.5, filter: 'url(#cc-glow-sun)' }, sun);
 
-  // v0.5: Traveling Moon — phase-accurate disc on inner ring
+  // Traveling Moon — phase-accurate disc, three breathing halo layers
   const moonB = h('g', { class: 'cc-body cc-moonb' }, gBodies);
-  h('circle', { cx: 0, cy: 0, r: 30, fill: '#ffffff', opacity: 0.18, class: 'cc-moonbhalo', filter: 'url(#cc-glow-moonb)' }, moonB);
+  h('circle', { cx: 0, cy: 0, r: 34, fill: '#ffffff', opacity: 0.10, class: 'cc-moonbhalo cc-mh-1', filter: 'url(#cc-glow-moonb)' }, moonB);
+  h('circle', { cx: 0, cy: 0, r: 28, fill: '#ffffff', opacity: 0.14, class: 'cc-moonbhalo cc-mh-2', filter: 'url(#cc-glow-moonb)' }, moonB);
+  h('circle', { cx: 0, cy: 0, r: 24, fill: '#e8ecff', opacity: 0.08, class: 'cc-moonbhalo cc-mh-3' }, moonB);
   const moonBDisc = h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: '#e8ecff', class: 'cc-moonb-lit' }, moonB);
   const moonBShadow = h('path', { d: travelMoonShadow(0.05), fill: '#0b081f', 'fill-opacity': 0.92, class: 'cc-moonb-shadow' }, moonB);
   h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.8, 'stroke-opacity': 0.7 }, moonB);
@@ -235,7 +261,7 @@ function buildSVG(root) {
   return {
     svg, rim, axisGroups, wedges, glyphsIn, glyphsOut, gSheen, gBull, gText, gAlt,
     gBodies, sun, moonB, moonBShadow, shadow, signOnMoon, moonHalo,
-    tDate, tTime, tPhase, tDeg, tAltTitle, tAlt1, tAlt2,
+    tDate, tTime, tTimeDigits, tTimeSuffix, tPhase, tDeg, tAltTitle, tAlt1, tAlt2,
   };
 }
 
@@ -246,7 +272,9 @@ function makeTicker(refs) {
     const L = getLunation(now);
     const dl = dateLine(now);
     if (dl !== last.dl) { refs.tDate.textContent = dl; last.dl = dl; }
-    refs.tTime.textContent = timeFmt.format(now);
+    const tp = timeParts(now);
+    refs.tTimeDigits.textContent = tp.nums;
+    refs.tTimeSuffix.textContent = tp.suffix;
     if (L.phase !== last.phase) { refs.tPhase.textContent = L.phase.toUpperCase(); last.phase = L.phase; }
     const degStr = `Moon at ${L.deg}\u00b0${String(L.arcmin).padStart(2, '0')}\u2032 ${L.sign}`;
     if (degStr !== last.deg) { refs.tDeg.textContent = degStr; last.deg = degStr; }

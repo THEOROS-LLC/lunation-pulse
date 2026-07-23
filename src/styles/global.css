@@ -51,8 +51,10 @@ html, body {
 /* ---- clock text: sized relative to viewBox (SVG units) ---- */
 .cclc-svg text { font-family: var(--serif); }
 .cc-t { fill: var(--ink); }
-.cc-date  { font-size: 26px; letter-spacing: 3px; font-weight: 300; }
-.cc-time  { font-size: 32px; font-weight: 400; letter-spacing: 2px; }
+.cc-date  { font-size: 20px; letter-spacing: 3px; font-weight: 300; }
+.cc-time  { font-size: 32px; font-weight: 300; letter-spacing: 2px; }
+.cc-time-digits { font-weight: 600; }
+.cc-time-suffix { font-size: 20px; font-weight: 300; letter-spacing: 1px; }
 .cc-phase { font-size: 20px; letter-spacing: 6px; fill: var(--ink-soft); font-weight: 300; }
 .cc-deg   { font-size: 24px; fill: #d9e0ff; letter-spacing: 2px; font-weight: 300; }
 .cc-alt-title { font-size: 28px; letter-spacing: 4px; }
@@ -70,6 +72,16 @@ html, body {
   animation: cc-pulse 7s ease-in-out infinite alternate,
              cc-flare 47s linear infinite;
 }
+.cclc-svg.live .cc-sunrays-a { animation: cc-spin-cw 90s linear infinite; }
+.cclc-svg.live .cc-sunrays-b { animation: cc-spin-ccw 120s linear infinite; }
+@keyframes cc-spin-cw  { to { transform: rotate(360deg); } }
+@keyframes cc-spin-ccw { to { transform: rotate(-360deg); } }
+.cclc-svg.live .cc-mh-1 { animation: cc-breathe-1 7s ease-in-out infinite alternate; }
+.cclc-svg.live .cc-mh-2 { animation: cc-breathe-2 11s ease-in-out infinite alternate; }
+.cclc-svg.live .cc-mh-3 { animation: cc-breathe-3 5s ease-in-out infinite alternate; }
+@keyframes cc-breathe-1 { from { opacity: .08; r: 32; } to { opacity: .18; r: 36; } }
+@keyframes cc-breathe-2 { from { opacity: .10; r: 26; } to { opacity: .20; r: 30; } }
+@keyframes cc-breathe-3 { from { opacity: .05; r: 22; } to { opacity: .12; r: 26; } }
 .cclc-svg.live .cc-moonbhalo { animation: cc-pulse-moon 9s ease-in-out infinite alternate; }
 .cclc-svg.live .cc-moonhalo  { animation: cc-halo 11s ease-in-out infinite alternate; }
 @keyframes cc-pulse { from { opacity: .14; } to { opacity: .32; } }
