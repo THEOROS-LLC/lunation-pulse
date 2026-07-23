@@ -2,17 +2,16 @@
 import Base from '../layouts/Base.astro';
 import Cclc from '../components/Cclc.astro';
 ---
-<Base title="The Lunation Journal — Lunar Pulse">
-  <div id="journalPage" class="wheel-page">
-    <div class="wheelwrap">
-      <Cclc />
-      <div id="room" class="room" aria-live="polite"></div>
+<Base title="Lunation Journal — Lunar Pulse">
+  <div id="journalPage" class="circle-page">
+    <Cclc />
+    <div class="page-aside">
+      <div id="room" aria-live="polite"></div>
+      <nav class="knights" aria-label="Pages">
+        <a href="/">The Clock</a>
+        <a href="/circle/">Clairsentient Support Circle</a>
+      </nav>
     </div>
-    <nav class="knights knights-under" aria-label="Pages">
-      <a href="/expressions/">Lunar Expressions</a>
-      <a href="/gathering/">The Gathering</a>
-      <a href="/">The Clock</a>
-    </nav>
   </div>
   <script>
     import { initJournal } from '../journal/journal.js';

@@ -137,12 +137,6 @@ function buildSVG(root) {
       'stroke-width': 7, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, s);
   }
 
-  // THE LUNAR PULSE — deepest layer: a ping rippling from the Moon into deep space
-  const gPulse = h('g', { class: 'cc-pulse-layer' }, svg);
-  const pulseRing = h('circle', { cx: 0, cy: 0, r: 24, fill: 'none',
-    stroke: '#dfe6ff', 'stroke-width': 2, opacity: 0,
-    'vector-effect': 'non-scaling-stroke', class: 'cc-pulse-ring' }, gPulse);
-
   const gAxes = h('g', { class: 'cc-axes' }, svg);
   const gRing = h('g', { class: 'cc-ring' }, svg);
   const gSheen = h('g', { class: 'cc-sheen' }, svg);
@@ -167,6 +161,12 @@ function buildSVG(root) {
     class: 'cc-t cc-aspect-deg', 'font-size': '22' }, gAspect);
 
   const gBodies = h('g', { class: 'cc-bodies' }, svg);  // topmost layer
+
+  // THE LUNAR PULSE — absolute front: ripple from the Moon into deep space
+  const gPulse = h('g', { class: 'cc-pulse-layer' }, svg);
+  const pulseRing = h('circle', { cx: 0, cy: 0, r: 24, fill: 'none',
+    stroke: '#dfe6ff', 'stroke-width': 2, opacity: 0,
+    'vector-effect': 'non-scaling-stroke', class: 'cc-pulse-ring' }, gPulse);
 
   const rim = h('path', {
     class: 'cc-rimline',

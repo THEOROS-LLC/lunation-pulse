@@ -2,16 +2,15 @@
 import Base from '../layouts/Base.astro';
 import Cclc from '../components/Cclc.astro';
 ---
-<Base title="The Clairsentient Support Circle — Lunar Pulse">
+<Base title="Clairsentient Support Circle — Lunar Pulse">
   <div id="circlePage" class="circle-page">
     <Cclc />
     <div class="page-aside">
       <section id="locked" class="prose" hidden>
-        <h2>The Clairsentient Support Circle</h2>
+        <h2>Clairsentient Support Circle</h2>
         <p>
-          This record is kept by the Circle. Members charge it with dreams, days,
-          and emotions — and the record keeps only the charge and the sky above it.
-          No name, no account, no trace of who.
+          The monthly circle meets under the living clock. Members enter
+          with the circle word to see the next gathering.
         </p>
         <form id="unlockForm" class="unlock">
           <input id="wordInput" type="password" placeholder="the circle word"
@@ -21,50 +20,36 @@ import Cclc from '../components/Cclc.astro';
         <p id="lockMsg" class="lockmsg" role="status"></p>
         <p class="joinline">
           Not yet a member?
-          <a href="https://buy.stripe.com/28E28q2Okb1i8T44mYaZi00" rel="noopener">Join — $33/mo founding rate</a>
+          <a href="https://buy.stripe.com/28E28q2Okb1i8T44mYaZi00" rel="noopener">Join — $120/mo</a>
         </p>
       </section>
-
       <section id="unlocked" hidden>
-        <div id="reading" class="reading" hidden aria-live="polite"></div>
-        <form id="composer" class="composer">
-          <fieldset class="seals">
-            <legend>Charge the record with</legend>
-            <label><input type="radio" name="charge" value="dream" checked />
-              <svg viewBox="-10 -10 20 20" class="seal"><path d="M4 -5 A7 7 0 1 0 4 5 A5.4 5.4 0 0 1 4 -5 Z"/></svg>
-              <span>a dream</span></label>
-            <label><input type="radio" name="charge" value="day" />
-              <svg viewBox="-10 -10 20 20" class="seal"><circle r="3.4"/><circle r="7" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
-              <span>a day</span></label>
-            <label><input type="radio" name="charge" value="emotion" />
-              <svg viewBox="-10 -10 20 20" class="seal"><path d="M0 5 C-6 0 -4 -5.5 0 -2.5 C4 -5.5 6 0 0 5 Z"/></svg>
-              <span>an emotion</span></label>
-          </fieldset>
-          <textarea id="chargeBody" rows="3" maxlength="2000" required
-            placeholder="What the Moon held. It enters the record exactly as written — and utterly unsigned."></textarea>
-          <input id="chargeLink" type="url" maxlength="300" placeholder="a link, if one belongs (optional)" />
-          <div class="composer-foot">
-            <button id="chargeBtn" type="submit" class="cta">Charge the record</button>
-            <span id="composeMsg" role="status"></span>
-          </div>
-        </form>
-
-        <h3 class="record-h">The Record</h3>
-        <p id="recordNote" class="snapshot"></p>
-        <div id="recordList" class="record-list"></div>
-        <p class="anon-note">The record remembers the charge, the link if given, and the exact
-          positions of the Sun and Moon at the moment of receipt. Nothing else exists to remember.</p>
+        <div id="nextGathering" class="gathering-hero" hidden aria-live="polite"></div>
+        <div id="composerWrap" hidden>
+          <form id="gComposer" class="composer">
+            <p class="seals-legend">Announce the next gathering</p>
+            <input id="gWhen" type="datetime-local" required aria-label="Meeting date and time" />
+            <textarea id="gBody" rows="3" maxlength="2000" required
+              placeholder="The announcement — theme, intention, what to bring inward."></textarea>
+            <input id="gLink" type="url" maxlength="300" placeholder="the Zoom link" />
+            <div class="composer-foot">
+              <button type="submit" class="cta">Announce</button>
+              <span id="gMsg" role="status"></span>
+            </div>
+          </form>
+        </div>
+        <h3 id="pastH" class="record-h" hidden>Gatherings</h3>
+        <div id="pastList" class="record-list"></div>
       </section>
-
       <nav class="knights" aria-label="Pages">
-        <a href="/gathering/">The Gathering</a>
-        <a href="/">Return to the clock</a>
+        <a href="/">The Clock</a>
+        <a href="/journal/">Lunation Journal</a>
       </nav>
     </div>
   </div>
   <script>
-    import { initRecord } from '../circle/record.js';
-    initRecord();
-    document.addEventListener('astro:page-load', initRecord);
+    import { initGathering } from '../circle/gathering.js';
+    initGathering();
+    document.addEventListener('astro:page-load', initGathering);
   </script>
 </Base>
