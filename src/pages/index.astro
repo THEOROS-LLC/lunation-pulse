@@ -6,39 +6,25 @@ const L = getLunation(new Date());
 const sunIn = L.sunLon % 30;
 const sunSign = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'][Math.floor(L.sunLon / 30)];
 const pad = n => String(n).padStart(2, '0');
-const skyNow = `The Moon is at ${L.deg}°${pad(L.arcmin)}′ ${L.sign}, in its ${L.phase.toLowerCase()} phase, and the Sun stands at ${Math.floor(sunIn)}°${pad(Math.floor((sunIn % 1) * 60))}′ ${sunSign}. The clock keeps both positions to the arcminute, every second.`;
+const skyNow = `The Moon is at ${L.deg}\u00b0${pad(L.arcmin)}\u2032 ${L.sign}, ${L.phase.toLowerCase()}. Sun at ${Math.floor(sunIn)}\u00b0${pad(Math.floor((sunIn % 1) * 60))}\u2032 ${sunSign}. Kept to the arcminute, every second.`;
 const built = new Date().toISOString();
-const ld = JSON.stringify({
-  '@context': 'https://schema.org',
-  '@graph': [
-    { '@type': 'WebSite', '@id': 'https://lunarpulse.ai/#site', name: 'Lunar Pulse',
-      url: 'https://lunarpulse.ai/', description: 'The sky, kept as a clock.' },
-    { '@type': 'Organization', '@id': 'https://lunarpulse.ai/#org', name: 'Lunar Pulse',
-      url: 'https://lunarpulse.ai/' },
-    { '@type': 'WebApplication', '@id': 'https://lunarpulse.ai/#app', name: 'Lunar Pulse',
-      url: 'https://lunarpulse.ai/', applicationCategory: 'ReferenceApplication',
-      operatingSystem: 'Any', isPartOf: { '@id': 'https://lunarpulse.ai/#site' },
-      dateModified: built,
-      description: 'A live lunation clock: the Moon\\u2019s zodiacal position, lunar phase, and the positions of Sun and Moon on the tropical zodiac, computed to the arcminute every second.' },
-  ],
-});
+const ld = JSON.stringify({'@context':'https://schema.org','@graph':[
+  {'@type':'WebSite','@id':'https://lunarpulse.ai/#site',name:'Lunar Pulse',url:'https://lunarpulse.ai/',description:'The sky, kept as a clock.'},
+  {'@type':'WebApplication','@id':'https://lunarpulse.ai/#app',name:'Lunar Pulse',url:'https://lunarpulse.ai/',applicationCategory:'ReferenceApplication',dateModified:built}
+]});
 ---
-<Base title="Lunar Pulse — the living lunation clock">
-  <div class="page-aside page-aside-top">
-    <header class="masthead">
-      <h1>Lunar Pulse</h1>
-      <p>The sky, kept as a clock.</p>
-    </header>
-  </div>
+<Base title="Lunar Pulse">
   <Cclc />
-  <div class="page-aside">
-    <nav class="knights" aria-label="Pages">
+  <header class="page-aside page-aside-left masthead">
+    <h1>Lunar Pulse</h1>
+    <p>The sky, kept as a clock.</p>
+  </header>
+  <div class="page-aside page-aside-right">
+    <nav class="knights">
       <a href="/journal/">Lunation Journal</a>
       <a href="/circle/">Clairsentient Support Circle</a>
     </nav>
-    <section class="skynow">
-      <p class="snapshot">{skyNow}</p>
-    </section>
+    <p class="snapshot">{skyNow}</p>
   </div>
   <script type="application/ld+json" is:inline set:html={ld} />
 </Base>
