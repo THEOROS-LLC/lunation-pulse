@@ -1,0 +1,22 @@
+---
+import Base from '../layouts/Base.astro';
+import Cclc from '../components/Cclc.astro';
+---
+<Base title="Lunar Expressions — Lunar Pulse">
+  <div id="expressionsPage" class="wheel-page">
+    <div class="wheelwrap">
+      <Cclc />
+      <div id="room" class="room" aria-live="polite"></div>
+    </div>
+    <nav class="knights knights-under" aria-label="Pages">
+      <a href="/journal/">The Lunation Journal</a>
+      <a href="/gathering/">The Gathering</a>
+      <a href="/">The Clock</a>
+    </nav>
+  </div>
+  <script>
+    import { initExpressions } from '../journal/journal.js';
+    initExpressions();
+    document.addEventListener('astro:page-load', initExpressions);
+  </script>
+</Base>

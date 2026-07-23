@@ -127,7 +127,7 @@ function buildSVG(root) {
   h('feComposite', { operator: 'atop', in2: 'SourceGraphic' }, moongrain);
 
   for (const [name, glow, sd] of [['sun', '#ffffff', 14], ['moonb', '#ffffff', 14], ['lume', '#dfe6ff', 10]]) {
-    const f = h('filter', { id: `cc-glow-${name}`, x: '-100%', y: '-100%', width: '300%', height: '300%' }, defs);
+    const f = h('filter', { id: `cc-glow-${name}`, x: '-250%', y: '-250%', width: '600%', height: '600%' }, defs);
     h('feDropShadow', { dx: 0, dy: 0, stdDeviation: sd, 'flood-color': glow, 'flood-opacity': 0.9 }, f);
   }
 
@@ -137,6 +137,12 @@ function buildSVG(root) {
       'stroke-width': 7, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, s);
   }
 
+  // THE LUNAR PULSE — deepest layer: a ping rippling from the Moon into deep space
+  const gPulse = h('g', { class: 'cc-pulse-layer' }, svg);
+  const pulseRing = h('circle', { cx: 0, cy: 0, r: 24, fill: 'none',
+    stroke: '#dfe6ff', 'stroke-width': 2, opacity: 0,
+    'vector-effect': 'non-scaling-stroke', class: 'cc-pulse-ring' }, gPulse);
+
   const gAxes = h('g', { class: 'cc-axes' }, svg);
   const gRing = h('g', { class: 'cc-ring' }, svg);
   const gSheen = h('g', { class: 'cc-sheen' }, svg);
@@ -144,10 +150,15 @@ function buildSVG(root) {
   const gBull = h('g', { class: 'cc-bull' }, svg);
   const gText = h('g', { class: 'cc-texts center-default' }, svg);
   const gAlt = h('g', { class: 'cc-altcenter' }, svg);
-  // ---- aspect overlay (shown on Sun/Moon hover) — BEFORE gBodies so line is behind the hands
+  // ---- aspect overlay (shown on Sun/Moon hover) — BEFORE gBodies so lines are behind the hands
   const gAspect = h('g', { class: 'cc-aspect', opacity: 0 }, svg);
+  const gAspLines = h('g', { class: 'cc-asplines' }, gAspect);
   const aspectLine = h('line', { x1: C, y1: C, x2: C, y2: C,
-    stroke: '#ffffff', 'stroke-width': 2.5, 'stroke-opacity': 0.85, class: 'cc-aspect-line' }, gAspect);
+    stroke: '#ffffff', 'stroke-width': 2.5, 'stroke-opacity': 0.85,
+    'stroke-linecap': 'round', class: 'cc-al1' }, gAspLines);
+  const aspectLine2 = h('line', { x1: C, y1: C, x2: C, y2: C,
+    stroke: '#ffffff', 'stroke-width': 2, 'stroke-opacity': 0,
+    'stroke-linecap': 'round', class: 'cc-al2' }, gAspLines);
   const aspectGlyph = h('text', { x: C, y: C + 12, 'text-anchor': 'middle',
     class: 'cc-t cc-aspect-glyph', 'font-size': '60' }, gAspect);
   const aspectName = h('text', { x: C, y: C - 50, 'text-anchor': 'middle',
@@ -280,17 +291,61 @@ function buildSVG(root) {
   h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.8, 'stroke-opacity': 0.7 }, moonB);
   h('circle', { cx: 0, cy: 0, r: BODY_MOON_R + 4, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.2, 'stroke-opacity': 0.4, filter: 'url(#cc-glow-moonb)' }, moonB);
 
+  // ---- OPEN WHEEL elements (hidden until setOpen) ----
+  const gSlim = h('g', { class: 'cc-slimband', opacity: 0 }, svg);
+  const SLIM_IN = 424, SLIM_OUT = 444;
+  for (let k = 0; k < 12; k++) {
+    const t1 = 180 + 30 * k, t2 = t1 + 30;
+    const [ax, ay] = P(t1, SLIM_OUT), [bx, by] = P(t2, SLIM_OUT);
+    const [cx2, cy2] = P(t2, SLIM_IN), [dx, dy] = P(t1, SLIM_IN);
+    h('path', {
+      d: `M ${fx(ax)} ${fx(ay)} A ${SLIM_OUT} ${SLIM_OUT} 0 0 0 ${fx(bx)} ${fx(by)} ` +
+         `L ${fx(cx2)} ${fx(cy2)} A ${SLIM_IN} ${SLIM_IN} 0 0 1 ${fx(dx)} ${fx(dy)} Z`,
+      fill: SIGN_COLORS[k], 'fill-opacity': 0.85,
+      stroke: RIM, 'stroke-width': 1, 'stroke-opacity': 0.35,
+    }, gSlim);
+  }
+  const gQuarters = h('g', { class: 'cc-quarters', opacity: 0 }, svg);
+  const Q_IN = 380, Q_OUT = 418;
+  const quarterEls = [];
+  for (let q = 0; q < 4; q++) {
+    const t1 = 90 * q, t2 = t1 + 90;
+    const [ax, ay] = P(t1, Q_OUT), [bx, by] = P(t2, Q_OUT);
+    const [cx2, cy2] = P(t2, Q_IN), [dx, dy] = P(t1, Q_IN);
+    const grp = h('g', { class: 'cc-quarter', tabindex: 0, role: 'tab' }, gQuarters);
+    const arc = h('path', {
+      d: `M ${fx(ax)} ${fx(ay)} A ${Q_OUT} ${Q_OUT} 0 0 0 ${fx(bx)} ${fx(by)} ` +
+         `L ${fx(cx2)} ${fx(cy2)} A ${Q_IN} ${Q_IN} 0 0 1 ${fx(dx)} ${fx(dy)} Z`,
+      fill: '#1a1440', 'fill-opacity': 0.55, stroke: RIM, 'stroke-width': 1,
+      'stroke-opacity': 0.3, class: 'cc-qarc',
+    }, grp);
+    const mid = t1 + 45;
+    const [lx, ly] = P(mid, (Q_IN + Q_OUT) / 2);
+    const lbl = h('text', { x: fx(lx), y: fx(ly + 7), 'text-anchor': 'middle',
+      class: 'cc-t cc-qlabel', 'font-size': '19' }, grp);
+    quarterEls.push({ grp, arc, lbl });
+  }
+  const gCompact = h('g', { class: 'cc-compact', opacity: 0,
+    transform: `translate(${C} 236)` }, svg);
+  h('circle', { cx: 0, cy: 0, r: 30, fill: 'url(#cc-moonsurf)', filter: 'url(#cc-moongrain)' }, gCompact);
+  const compactShadow = h('path', { d: travelMoonShadow(0.05, 30), fill: '#0b081f', 'fill-opacity': 0.94 }, gCompact);
+  h('circle', { cx: 0, cy: 0, r: 30, fill: 'none', stroke: '#e9ecff', 'stroke-width': 1.5, 'stroke-opacity': 0.4 }, gCompact);
+  const compactSign = h('use', { href: '#cc-g-aries', width: 100, height: 100,
+    transform: 'scale(0.38) translate(-50 -50)', opacity: 0.92 }, gCompact);
+
   return {
     svg, rim, axisGroups, wedges, glyphsIn, glyphsOut, gSheen, gBull, gText, gAlt,
-    gBodies, sun, moonB, moonBShadow, shadow, signOnMoon, moonHalo,
-    tDate, tTime, tTimeDigits, tTimeSuffix, tPhase, tDeg, tAltTitle, tAlt1, tAlt2,
-    gAspect, aspectLine, aspectGlyph, aspectName, aspectDeg,
+    gBodies, sun, moonB, moonBShadow, shadow, signOnMoon, moonHalo, moonDisc,
+    gPulse, tDate, tTime, tTimeDigits, tTimeSuffix, tPhase, tDeg, tAltTitle, tAlt1, tAlt2,
+    gAspect, gAspLines, aspectLine, aspectLine2, aspectGlyph, aspectName, aspectDeg,
+    gSlim, gQuarters, quarterEls, gCompact, compactShadow, compactSign,
   };
 }
 
 // ----------------------------------------------------------------- live ----
 function makeTicker(refs) {
   let last = {};
+  const state = { bodyR: R_BODIES };   // animatable: bodies migrate to rim in open mode
   function render(now) {
     const L = getLunation(now);
     const dl = dateLine(now);
@@ -305,18 +360,22 @@ function makeTicker(refs) {
       refs.signOnMoon.setAttribute('href', `#cc-g-${SIGN_KEYS[L.signIdx]}`);
       refs.signOnMoon.style.color = SIGN_COLORS[L.signIdx];
       refs.signOnMoon.style.filter = `drop-shadow(0 0 9px ${SIGN_COLORS[L.signIdx]})`;
+      refs.compactSign.setAttribute('href', `#cc-g-${SIGN_KEYS[L.signIdx]}`);
+      refs.compactSign.style.color = SIGN_COLORS[L.signIdx];
       last.signIdx = L.signIdx;
     }
     const eR = Math.round(L.elong * 50);
     if (eR !== last.eR) {
       refs.shadow.setAttribute('d', shadowPath(L.elong));
       refs.moonBShadow.setAttribute('d', travelMoonShadow(L.elong));
+      refs.compactShadow.setAttribute('d', travelMoonShadow(L.elong, 30));
       last.eR = eR;
     }
-    const [sx, sy] = wheelXY(L.sunLon, R_BODIES);
+    const [sx, sy] = wheelXY(L.sunLon, state.bodyR);
     refs.sun.setAttribute('transform', `translate(${fx(sx)} ${fx(sy)})`);
-    const [mx, my] = wheelXY(L.moonLon, R_BODIES);
+    const [mx, my] = wheelXY(L.moonLon, state.bodyR);
     refs.moonB.setAttribute('transform', `translate(${fx(mx)} ${fx(my)})`);
+    refs.gPulse.setAttribute('transform', `translate(${fx(mx)} ${fx(my)})`);
     return L;
   }
   let timer = null;
@@ -327,7 +386,7 @@ function makeTicker(refs) {
   }
   function start() { if (timer === null) tick(); }
   function resync() { if (timer !== null) { clearTimeout(timer); timer = null; } start(); }
-  return { render, start, resync };
+  return { render, start, resync, state };
 }
 
 // ---------------------------------------------------------------- intro ----
@@ -443,12 +502,16 @@ export function mountCCLC(container) {
     document.documentElement.classList.toggle('cc-paused', document.hidden);
   });
 
-  // ---- aspect hover: Sun or Moon → phase-out bull's-eye, reveal aspect
+  // ---- aspect hover: Sun or Moon → phase-out the moon only; text stays ALWAYS ON
   let aspectShowing = false;
   let sweepRaf = null;
   const vocTimeFmt = new Intl.DateTimeFormat('en-US', {
     hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
   });
+  const COLOR_FAMILY = {
+    '#e84040': 'red', '#e88a3a': 'orange', '#4dd97a': 'green',
+    '#b366ff': 'purple', '#a8d940': 'yg', '#3a6ee8': 'blue',
+  };
 
   function showAspect() {
     if (aspectShowing) return;
@@ -456,7 +519,7 @@ export function mountCCLC(container) {
     const L = getLunation(new Date());
     const hit = findAspect(L.elong);
 
-    // phase-out: sweep shadow from current elongation → 0 (new moon / dark)
+    // phase-out: sign + halo fade, shadow sweeps to new-moon dark, then disc dissolves
     const startE = L.elong;
     const t0 = performance.now();
     const dur = 500;
@@ -464,18 +527,17 @@ export function mountCCLC(container) {
     refs.signOnMoon.style.opacity = '0';
     refs.moonHalo.style.transition = 'stroke-opacity .3s ease';
     refs.moonHalo.style.strokeOpacity = '0';
-    refs.gText.style.transition = 'opacity .35s ease';
-    refs.gText.style.opacity = '0';
 
     function sweepOut(nowT) {
       const p = Math.min(1, (nowT - t0) / dur);
       const e = easeOutCubic(p);
-      const currentE = startE * (1 - e) + 0.05 * e;
-      refs.shadow.setAttribute('d', shadowPath(currentE));
+      refs.shadow.setAttribute('d', shadowPath(startE * (1 - e) + 0.05 * e));
       if (p < 1) { sweepRaf = requestAnimationFrame(sweepOut); return; }
-      // sweep done — show aspect content
-      refs.gBull.style.transition = 'opacity .25s ease';
-      refs.gBull.style.opacity = '0.08';
+      // moon is dark — dissolve it, reveal the aspect
+      refs.moonDisc.style.transition = 'opacity .25s ease';
+      refs.shadow.style.transition = 'opacity .25s ease';
+      refs.moonDisc.style.opacity = '0';
+      refs.shadow.style.opacity = '0';
       populateAspect(hit, L);
       refs.gAspect.style.transition = 'opacity .3s ease';
       refs.gAspect.style.opacity = '1';
@@ -484,52 +546,85 @@ export function mountCCLC(container) {
   }
 
   function populateAspect(hit, L) {
-    if (hit && !hit.aspect.noLine) {
-      const [mx, my] = wheelXY(L.moonLon, R_BODIES);
-      const [sx, sy] = wheelXY(L.sunLon, R_BODIES);
-      refs.aspectLine.setAttribute('x1', fx(mx));
-      refs.aspectLine.setAttribute('y1', fx(my));
-      refs.aspectLine.setAttribute('x2', fx(sx));
-      refs.aspectLine.setAttribute('y2', fx(sy));
-      refs.aspectLine.setAttribute('stroke', hit.aspect.color);
-      refs.aspectLine.setAttribute('stroke-opacity', '0.85');
-      refs.aspectLine.setAttribute('stroke-dasharray', hit.approaching ? 'none' : '8 6');
-      const label = hit.approaching ? 'APPROACHING' : 'SEPARATING';
-      refs.aspectName.textContent = `The Moon is ${label}`;
+    const setFills = (color) => {
+      refs.aspectName.style.fill = color;
+      refs.aspectGlyph.style.fill = color;
+      refs.aspectDeg.style.fill = color;
+    };
+    if (hit) {
+      const color = hit.aspect.color;
+      const family = COLOR_FAMILY[color] || 'green';
+      const app = hit.approaching;
+      // thickness by exactness: 10px at exact, 1px at orb edge
+      const w = 1 + 9 * (1 - hit.tightness / hit.aspect.orb);
+      if (!hit.aspect.noLine) {
+        const [mx, my] = wheelXY(L.moonLon, R_BODIES);
+        const [sx, sy] = wheelXY(L.sunLon, R_BODIES);
+        for (const ln of [refs.aspectLine, refs.aspectLine2]) {
+          ln.setAttribute('x1', fx(mx)); ln.setAttribute('y1', fx(my));
+          ln.setAttribute('x2', fx(sx)); ln.setAttribute('y2', fx(sy));
+        }
+        refs.gAspLines.setAttribute('class',
+          `cc-asplines asp-${family} ${app ? 'app' : 'sep'}`);
+        refs.gAspLines.style.filter = `drop-shadow(0 0 6px ${color})`;
+        refs.aspectLine.setAttribute('stroke', color);
+        refs.aspectLine.setAttribute('stroke-width', fx(w));
+        refs.aspectLine.setAttribute('stroke-opacity', '0.9');
+        if (app) {
+          refs.aspectLine.removeAttribute('stroke-dasharray');
+          if (family === 'purple' || family === 'yg') {
+            // sparkle overlay drifting along the solid line
+            refs.aspectLine2.setAttribute('stroke', '#ffffff');
+            refs.aspectLine2.setAttribute('stroke-width', fx(Math.min(w, 2)));
+            refs.aspectLine2.setAttribute('stroke-dasharray', family === 'purple' ? '1.5 15' : '1 22');
+            refs.aspectLine2.setAttribute('stroke-opacity', family === 'purple' ? '0.55' : '0.35');
+            refs.aspectLine2.setAttribute('class', family === 'purple' ? 'cc-al2 sparkle' : 'cc-al2 sparkle-slow');
+          } else {
+            refs.aspectLine2.setAttribute('stroke-opacity', '0');
+            refs.aspectLine2.setAttribute('class', 'cc-al2');
+          }
+        } else {
+          // separating: two counter-flowing dashed lines
+          refs.aspectLine.setAttribute('stroke-dasharray', '8 6');
+          refs.aspectLine.setAttribute('class', 'cc-al1 flow');
+          refs.aspectLine2.setAttribute('stroke', color);
+          refs.aspectLine2.setAttribute('stroke-width', fx(Math.max(1, w * 0.7)));
+          refs.aspectLine2.setAttribute('stroke-dasharray', '8 6');
+          refs.aspectLine2.setAttribute('stroke-dashoffset', '7');
+          refs.aspectLine2.setAttribute('stroke-opacity', '0.55');
+          refs.aspectLine2.setAttribute('class', 'cc-al2 flow-r');
+        }
+        if (app) refs.aspectLine.setAttribute('class', 'cc-al1');
+      } else {
+        // conjunction — no line
+        refs.aspectLine.setAttribute('stroke-opacity', '0');
+        refs.aspectLine2.setAttribute('stroke-opacity', '0');
+      }
+      const label = app ? 'APPROACHING' : 'SEPARATING';
+      refs.aspectName.textContent = hit.aspect.noLine
+        ? 'The Moon is in' : `The Moon is ${label}`;
       refs.aspectGlyph.textContent = hit.aspect.glyph;
       refs.aspectGlyph.setAttribute('font-size', '60');
-      refs.aspectDeg.textContent = `${hit.aspect.name} the Sun`;
-      refs.aspectName.setAttribute('fill', hit.aspect.color);
-      refs.aspectGlyph.setAttribute('fill', hit.aspect.color);
-      refs.aspectDeg.setAttribute('fill', hit.aspect.color);
-    } else if (hit && hit.aspect.noLine) {
-      refs.aspectLine.setAttribute('stroke-opacity', '0');
-      refs.aspectName.textContent = 'The Moon is in';
-      refs.aspectGlyph.textContent = hit.aspect.glyph;
-      refs.aspectGlyph.setAttribute('font-size', '60');
-      refs.aspectDeg.textContent = `${hit.aspect.name} with the Sun`;
-      refs.aspectName.setAttribute('fill', hit.aspect.color);
-      refs.aspectGlyph.setAttribute('fill', hit.aspect.color);
-      refs.aspectDeg.setAttribute('fill', hit.aspect.color);
+      refs.aspectDeg.textContent = hit.aspect.noLine
+        ? `${hit.aspect.name} with the Sun` : `${hit.aspect.name} the Sun`;
+      setFills(color);
     } else {
       // no Sun-Moon aspect — check Void of Course
       refs.aspectLine.setAttribute('stroke-opacity', '0');
+      refs.aspectLine2.setAttribute('stroke-opacity', '0');
       const voc = computeVOC(AstroEngine, new Date());
       if (voc.isVOC) {
         refs.aspectName.textContent = 'The Moon is currently';
         refs.aspectGlyph.textContent = 'Void of Course';
         refs.aspectGlyph.setAttribute('font-size', '24');
         refs.aspectDeg.textContent = `Until ${vocTimeFmt.format(voc.until)}`;
-        const vocColor = '#e88a3a';
-        refs.aspectName.setAttribute('fill', vocColor);
-        refs.aspectGlyph.setAttribute('fill', vocColor);
-        refs.aspectDeg.setAttribute('fill', vocColor);
+        setFills('#e86a3a');
       } else {
         refs.aspectName.textContent = '';
         refs.aspectGlyph.textContent = 'No major aspect';
         refs.aspectGlyph.setAttribute('font-size', '20');
         refs.aspectDeg.textContent = '';
-        refs.aspectGlyph.setAttribute('fill', INK_SOFT);
+        setFills(INK_SOFT);
       }
     }
   }
@@ -540,9 +635,10 @@ export function mountCCLC(container) {
     aspectShowing = false;
     refs.gAspect.style.transition = 'opacity .25s ease';
     refs.gAspect.style.opacity = '0';
-    refs.gBull.style.transition = 'opacity .25s ease';
-    refs.gBull.style.opacity = '1';
-    // sweep back in: 0 → current elongation
+    // moon returns: disc fades in dark, then phase sweeps back to now
+    refs.moonDisc.style.opacity = '1';
+    refs.shadow.style.opacity = '1';
+    refs.shadow.setAttribute('d', shadowPath(0.05));
     const L = getLunation(new Date());
     const targetE = L.elong;
     const t0 = performance.now();
@@ -555,7 +651,6 @@ export function mountCCLC(container) {
       else {
         refs.signOnMoon.style.opacity = '0.92';
         refs.moonHalo.style.strokeOpacity = '0.35';
-        refs.gText.style.opacity = '1';
       }
     }
     requestAnimationFrame(sweepIn);
@@ -580,6 +675,95 @@ export function mountCCLC(container) {
       refs.svg.classList.add('center-alt');
     },
     lunation: getLunation,
+    mode: 'clock',
+
+    /** OPEN WHEEL: ring contracts to a slim band, four-fold nav appears,
+     *  interior opens for content. Sun & Moon migrate to the rim.
+     *  sections: [{key,label,color}], onSelect(key) */
+    setOpen(opts = {}) {
+      if (api.mode === 'open') { api._updateQuarters(opts); return; }
+      api.mode = 'open';
+      const D = 550;
+      const fade = (el, to, dur = D) => el.animate(
+        { opacity: [getComputedStyle(el).opacity, to] },
+        { duration: dur, fill: 'both', easing: 'ease-in-out' });
+      // ring dissolves to slim band
+      for (const w of refs.wedges) fade(w, 0, 400);
+      for (const g of refs.glyphsIn) fade(g, 0, 350);
+      fade(refs.gSheen, 0, 350);
+      fade(refs.gSlim, 1);
+      fade(refs.gQuarters, 1, D + 150);
+      // bull's-eye + big texts give way; compact moon takes the top
+      fade(refs.gBull, 0, 400);
+      fade(refs.gCompact, 1, D + 100);
+      // texts move to open-mode positions
+      const pos = { tDate: 128, tTime: 170, tPhase: 858, tDeg: 894 };
+      for (const [k, y] of Object.entries(pos)) {
+        const el = refs[k];
+        el.animate({ opacity: [1, 0] }, { duration: 220, fill: 'forwards' })
+          .onfinish = () => {
+            el.setAttribute('y', y);
+            el.animate({ opacity: [0, 1] }, { duration: 260, fill: 'forwards' });
+          };
+      }
+      // bodies migrate to the rim
+      const t0 = performance.now(), from = ticker.state.bodyR, to = 434;
+      (function mig(nowT) {
+        const p = Math.min(1, (nowT - t0) / 600);
+        ticker.state.bodyR = from + (to - from) * easeOutCubic(p);
+        ticker.render(new Date());
+        if (p < 1) requestAnimationFrame(mig);
+      })(t0);
+      api._updateQuarters(opts);
+    },
+
+    _updateQuarters({ sections = [], active = null, onSelect = null } = {}) {
+      refs.quarterEls.forEach((q, i) => {
+        const s = sections[i];
+        if (!s) { q.grp.style.display = 'none'; return; }
+        q.grp.style.display = '';
+        q.lbl.textContent = s.label.toUpperCase();
+        q.lbl.style.fill = s.key === active ? s.color : INK_SOFT;
+        q.arc.setAttribute('stroke', s.key === active ? s.color : RIM);
+        q.arc.setAttribute('stroke-opacity', s.key === active ? '0.9' : '0.3');
+        q.arc.setAttribute('fill-opacity', s.key === active ? '0.75' : '0.5');
+        q.arc.style.filter = s.key === active ? `drop-shadow(0 0 8px ${s.color})` : '';
+        q.grp.style.cursor = 'pointer';
+        q.grp.onclick = () => onSelect && onSelect(s.key);
+        q.grp.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect && onSelect(s.key); } };
+      });
+    },
+
+    setClock() {
+      if (api.mode === 'clock') return;
+      api.mode = 'clock';
+      const fade = (el, to, dur = 450) => el.animate(
+        { opacity: [getComputedStyle(el).opacity, to] },
+        { duration: dur, fill: 'both', easing: 'ease-in-out' });
+      for (const w of refs.wedges) fade(w, 1);
+      for (const g of refs.glyphsIn) fade(g, 1);
+      fade(refs.gSheen, 1);
+      fade(refs.gSlim, 0, 350);
+      fade(refs.gQuarters, 0, 300);
+      fade(refs.gBull, 1, 500);
+      fade(refs.gCompact, 0, 300);
+      const pos = { tDate: 340, tTime: 378, tPhase: 640, tDeg: 676 };
+      for (const [k, y] of Object.entries(pos)) {
+        const el = refs[k];
+        el.animate({ opacity: [1, 0] }, { duration: 200, fill: 'forwards' })
+          .onfinish = () => {
+            el.setAttribute('y', y);
+            el.animate({ opacity: [0, 1] }, { duration: 260, fill: 'forwards' });
+          };
+      }
+      const t0 = performance.now(), from = ticker.state.bodyR, to = R_BODIES;
+      (function mig(nowT) {
+        const p = Math.min(1, (nowT - t0) / 600);
+        ticker.state.bodyR = from + (to - from) * easeOutCubic(p);
+        ticker.render(new Date());
+        if (p < 1) requestAnimationFrame(mig);
+      })(t0);
+    },
   };
   container.__cclc = api;
   container.dataset.mountedAt = timeFmt.format(new Date());

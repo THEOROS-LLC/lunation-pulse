@@ -37,7 +37,7 @@ html, body {
   .page-aside { flex: 1; min-width: 0; overflow-y: auto; max-height: 100dvh; padding: 1.2rem; max-width: 26rem; }
 }
 
-.cclc-svg { width: 100%; height: 100%; display: block; }
+.cclc-svg { width: 100%; height: 100%; display: block; overflow: visible; }
 
 /* ---- masthead ---- */
 .masthead { text-align: center; padding: 0.4rem 0; }
@@ -209,3 +209,136 @@ a:focus-visible { outline: 2px solid var(--rim); outline-offset: 4px; border-rad
 .cc-aspect-name { font-family: var(--serif); letter-spacing: 3px; font-weight: 300; }
 .cc-aspect-deg { font-family: var(--serif); letter-spacing: 1px; font-weight: 400; }
 .cc-body { pointer-events: auto; }
+
+/* ---------- THE LUNAR PULSE ---------- */
+.cc-pulse-ring { transform-box: fill-box; transform-origin: center; }
+.cclc-svg.live .cc-pulse-ring {
+  animation: cc-ping 9s cubic-bezier(.6, 0, 1, .5) infinite;
+}
+@keyframes cc-ping {
+  0%   { transform: scale(0.15); opacity: 0; }
+  3%   { opacity: 0.5; }
+  100% { transform: scale(150); opacity: 0; }
+}
+
+/* ---------- Aspect line personalities ---------- */
+/* counterflow for separating dashed lines */
+.cc-al1.flow   { animation: cc-dash-a 1.1s linear infinite; }
+.cc-al2.flow-r { animation: cc-dash-b 1.1s linear infinite; }
+@keyframes cc-dash-a { to { stroke-dashoffset: -28; } }
+@keyframes cc-dash-b { to { stroke-dashoffset: 28; } }
+/* sparkles drift along solid purple / yellow-green lines */
+.cc-al2.sparkle      { animation: cc-dash-a 2.4s linear infinite; }
+.cc-al2.sparkle-slow { animation: cc-dash-a 3.8s linear infinite; }
+
+/* RED — tense: electric buzz */
+.asp-red { animation: cc-buzz .16s steps(2, end) infinite; }
+/* ORANGE — softer buzz */
+.asp-orange { animation: cc-buzz-soft .32s steps(2, end) infinite; }
+/* GREEN — harmonious: slow breathe like the moon */
+.asp-green { animation: cc-glowbreathe 4s ease-in-out infinite alternate; }
+/* PURPLE — magic: gentle breathe + drifting sparkles (line2) */
+.asp-purple { animation: cc-glowbreathe 3s ease-in-out infinite alternate; }
+/* YELLOW-GREEN — subtler sparkle family */
+.asp-yg { animation: cc-glowbreathe 5s ease-in-out infinite alternate; }
+/* BLUE QUINCUNX — the most electric: fast buzz + shade pulsing */
+.asp-blue { animation: cc-buzz .12s steps(2, end) infinite; }
+.asp-blue .cc-al1 { animation: cc-bluepulse 1.6s ease-in-out infinite alternate; }
+.asp-blue .cc-al1.flow { animation: cc-dash-a 1.1s linear infinite, cc-bluepulse 1.6s ease-in-out infinite alternate; }
+
+@keyframes cc-buzz      { from { opacity: .78; } to { opacity: .98; } }
+@keyframes cc-buzz-soft { from { opacity: .84; } to { opacity: .97; } }
+@keyframes cc-glowbreathe { from { opacity: .68; } to { opacity: 1; } }
+@keyframes cc-bluepulse { from { stroke: #3a6ee8; } to { stroke: #6ea8ff; } }
+
+/* ---------- The Open Wheel: the room inside ---------- */
+.wheel-page { display: flex; flex-direction: column; align-items: center; width: 100%; height: 100%; justify-content: center; }
+.wheelwrap { position: relative; width: min(88dvmin, 900px); height: min(88dvmin, 900px); }
+.wheelwrap .cclc { width: 100%; height: 100%; }
+.room {
+  position: absolute;
+  left: 15%; right: 15%; top: 28%; bottom: 15%;
+  overflow-y: auto; overflow-x: hidden;
+  display: flex; flex-direction: column; gap: .7rem;
+  padding: .5rem .8rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(223,230,255,.25) transparent;
+  mask-image: linear-gradient(to bottom, transparent, black 4%, black 96%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 4%, black 96%, transparent);
+}
+.knights-under { margin-top: .3rem; }
+
+/* auth */
+.jr-auth { text-align: center; display: flex; flex-direction: column; gap: .6rem; align-items: center; margin-top: 12%; }
+.jr-h { font-weight: 400; letter-spacing: .28em; text-transform: uppercase; font-size: 1rem; color: var(--ink); }
+.jr-sub { color: var(--ink-soft); font-style: italic; font-size: .85rem; }
+.jr-tabs { display: flex; gap: .6rem; }
+.jr-tab { background: none; border: none; color: var(--ink-soft); font-family: var(--serif);
+  letter-spacing: .18em; text-transform: uppercase; font-size: .72rem; cursor: pointer;
+  border-bottom: 1px solid transparent; padding-bottom: .15rem; }
+.jr-tab.on { color: var(--ink); border-bottom-color: rgba(223,230,255,.5); }
+.jr-form { display: flex; flex-direction: column; gap: .5rem; width: min(80%, 20rem); }
+.jr-form input {
+  background: rgba(14,10,38,.7); border: 1px solid rgba(223,230,255,.3); border-radius: 999px;
+  color: var(--ink); font-family: var(--serif); font-size: .88rem; padding: .55rem 1.1rem;
+}
+.jr-form input:focus { outline: none; border-color: var(--ink); }
+.jr-msg { color: #e8a1a1; font-style: italic; font-size: .8rem; min-height: 1em; }
+
+/* composer + chips */
+.jr-top { display: flex; justify-content: space-between; align-items: center;
+  color: var(--ink-soft); font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; }
+.jr-composer { display: flex; flex-direction: column; gap: .5rem; }
+.jr-pills { display: flex; gap: .45rem; flex-wrap: wrap; justify-content: center; }
+.jr-pill { display: flex; align-items: center; cursor: pointer;
+  border: 1px solid rgba(223,230,255,.28); border-radius: 999px; padding: .28rem .8rem;
+  color: var(--ink-soft); font-size: .78rem; }
+.jr-pill input { position: absolute; opacity: 0; pointer-events: none; }
+.jr-pill:has(input:checked) { border-color: var(--pc); color: var(--pc);
+  background: color-mix(in srgb, var(--pc) 12%, transparent); }
+.jr-composer textarea {
+  background: rgba(14,10,38,.7); border: 1px solid rgba(223,230,255,.3); border-radius: 10px;
+  color: var(--ink); font-family: var(--serif); font-size: .88rem; padding: .6rem .8rem;
+  width: 100%; line-height: 1.55; }
+.jr-composer textarea:focus { outline: none; border-color: var(--ink); }
+.jr-comprow { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+.jr-select { background: rgba(14,10,38,.7); border: 1px solid rgba(223,230,255,.3);
+  border-radius: 999px; color: var(--ink-soft); font-family: var(--serif);
+  font-size: .78rem; padding: .35rem .8rem; }
+.jr-vis { display: flex; align-items: center; gap: .35rem; color: var(--ink-soft);
+  font-size: .78rem; cursor: pointer; }
+.jr-vis input { accent-color: #dfe6ff; }
+.jr-chips { display: flex; gap: .4rem; flex-wrap: wrap; }
+.jr-chip { background: none; border: 1px solid rgba(223,230,255,.25); border-radius: 999px;
+  color: var(--ink-soft); font-family: var(--serif); font-size: .72rem;
+  padding: .22rem .7rem; cursor: pointer; letter-spacing: .08em; }
+.jr-chip.on { border-color: var(--ink); color: var(--ink); background: rgba(223,230,255,.07); }
+
+/* cards */
+.jr-list { display: flex; flex-direction: column; gap: .6rem; }
+.jr-card { border: 1px solid rgba(223,230,255,.18); border-left: 3px solid var(--pc, #6ea8ff);
+  border-radius: 10px; padding: .6rem .8rem; background: rgba(14,10,38,.55); }
+.jr-card header { display: flex; justify-content: space-between; gap: .8rem;
+  font-size: .66rem; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-soft); }
+.jr-sec { color: var(--pc, var(--ink)); }
+.jr-body { margin: .35rem 0 .2rem; line-height: 1.55; color: var(--ink);
+  white-space: pre-wrap; font-size: .86rem; }
+.jr-stamp { font-size: .68rem; color: #a9b2df; font-style: italic; }
+.jr-ccount { font-size: .68rem; color: var(--ink-soft); margin-top: .3rem; letter-spacing: .1em; }
+.jr-cardrow { display: flex; gap: .5rem; margin-top: .4rem; flex-wrap: wrap; }
+.jr-mini { background: none; border: 1px solid rgba(223,230,255,.3); border-radius: 999px;
+  color: var(--ink-soft); font-family: var(--serif); font-size: .66rem;
+  padding: .18rem .65rem; cursor: pointer; letter-spacing: .1em; text-transform: uppercase; }
+.jr-mini:hover { border-color: var(--ink); color: var(--ink); }
+
+/* thread */
+.jr-thread { display: flex; flex-direction: column; gap: .6rem; }
+.jr-comments { display: flex; flex-direction: column; gap: .45rem; padding-left: 1rem; }
+.jr-comment { border-left: 2px solid rgba(223,230,255,.25); padding: .3rem 0 .3rem .7rem; }
+.jr-comment p { font-size: .84rem; color: var(--ink); line-height: 1.5; }
+.jr-commentform { display: flex; gap: .5rem; align-items: flex-end; }
+.jr-commentform textarea { flex: 1; background: rgba(14,10,38,.7);
+  border: 1px solid rgba(223,230,255,.3); border-radius: 10px; color: var(--ink);
+  font-family: var(--serif); font-size: .84rem; padding: .5rem .7rem; }
+.jr-qlabel { letter-spacing: .2em; }
+.cc-qlabel { letter-spacing: 3px; font-weight: 400; }
