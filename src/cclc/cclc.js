@@ -5,7 +5,8 @@
 import { getLunation, wheelAngle, wheelXY, SIGN_NAMES } from './lunation.js';
 import { SIGN_COLORS, BG, RIM, INK, INK_SOFT } from './palette.js';
 import { GLYPHS, SIGN_KEYS } from './glyphs.js';
-import { findAspect } from './aspects.js';
+import { findAspect, computeVOC } from './aspects.js';
+import * as AstroEngine from 'astronomy-engine';
 
 const NS = 'http://www.w3.org/2000/svg';
 const C = 500;
@@ -143,6 +144,17 @@ function buildSVG(root) {
   const gBull = h('g', { class: 'cc-bull' }, svg);
   const gText = h('g', { class: 'cc-texts center-default' }, svg);
   const gAlt = h('g', { class: 'cc-altcenter' }, svg);
+  // ---- aspect overlay (shown on Sun/Moon hover) — BEFORE gBodies so line is behind the hands
+  const gAspect = h('g', { class: 'cc-aspect', opacity: 0 }, svg);
+  const aspectLine = h('line', { x1: C, y1: C, x2: C, y2: C,
+    stroke: '#ffffff', 'stroke-width': 2.5, 'stroke-opacity': 0.85, class: 'cc-aspect-line' }, gAspect);
+  const aspectGlyph = h('text', { x: C, y: C + 12, 'text-anchor': 'middle',
+    class: 'cc-t cc-aspect-glyph', 'font-size': '60' }, gAspect);
+  const aspectName = h('text', { x: C, y: C - 50, 'text-anchor': 'middle',
+    class: 'cc-t cc-aspect-name', 'font-size': '18' }, gAspect);
+  const aspectDeg = h('text', { x: C, y: C + 60, 'text-anchor': 'middle',
+    class: 'cc-t cc-aspect-deg', 'font-size': '22' }, gAspect);
+
   const gBodies = h('g', { class: 'cc-bodies' }, svg);  // topmost layer
 
   const rim = h('path', {
@@ -267,17 +279,6 @@ function buildSVG(root) {
   const moonBShadow = h('path', { d: travelMoonShadow(0.05), fill: '#0b081f', 'fill-opacity': 0.92, class: 'cc-moonb-shadow' }, moonB);
   h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.8, 'stroke-opacity': 0.7 }, moonB);
   h('circle', { cx: 0, cy: 0, r: BODY_MOON_R + 4, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.2, 'stroke-opacity': 0.4, filter: 'url(#cc-glow-moonb)' }, moonB);
-
-  // ---- aspect overlay (shown on Sun/Moon hover)
-  const gAspect = h('g', { class: 'cc-aspect', opacity: 0 }, svg);
-  const aspectLine = h('line', { x1: C, y1: C, x2: C, y2: C,
-    stroke: '#ffffff', 'stroke-width': 2.5, 'stroke-opacity': 0.85, class: 'cc-aspect-line' }, gAspect);
-  const aspectGlyph = h('text', { x: C, y: C + 12, 'text-anchor': 'middle',
-    class: 'cc-t cc-aspect-glyph', 'font-size': '60' }, gAspect);
-  const aspectName = h('text', { x: C, y: C - 50, 'text-anchor': 'middle',
-    class: 'cc-t cc-aspect-name', 'font-size': '18' }, gAspect);
-  const aspectDeg = h('text', { x: C, y: C + 60, 'text-anchor': 'middle',
-    class: 'cc-t cc-aspect-deg', 'font-size': '22' }, gAspect);
 
   return {
     svg, rim, axisGroups, wedges, glyphsIn, glyphsOut, gSheen, gBull, gText, gAlt,
@@ -442,18 +443,48 @@ export function mountCCLC(container) {
     document.documentElement.classList.toggle('cc-paused', document.hidden);
   });
 
-  // ---- aspect hover: Sun or Moon → reveal aspect line + center info
+  // ---- aspect hover: Sun or Moon → phase-out bull's-eye, reveal aspect
   let aspectShowing = false;
+  let sweepRaf = null;
+  const vocTimeFmt = new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
+  });
+
   function showAspect() {
+    if (aspectShowing) return;
+    aspectShowing = true;
     const L = getLunation(new Date());
     const hit = findAspect(L.elong);
-    // fade out bull's-eye content
-    refs.gBull.style.transition = 'opacity .35s ease';
+
+    // phase-out: sweep shadow from current elongation → 0 (new moon / dark)
+    const startE = L.elong;
+    const t0 = performance.now();
+    const dur = 500;
+    refs.signOnMoon.style.transition = 'opacity .3s ease';
+    refs.signOnMoon.style.opacity = '0';
+    refs.moonHalo.style.transition = 'stroke-opacity .3s ease';
+    refs.moonHalo.style.strokeOpacity = '0';
     refs.gText.style.transition = 'opacity .35s ease';
-    refs.gBull.style.opacity = '0.15';
     refs.gText.style.opacity = '0';
+
+    function sweepOut(nowT) {
+      const p = Math.min(1, (nowT - t0) / dur);
+      const e = easeOutCubic(p);
+      const currentE = startE * (1 - e) + 0.05 * e;
+      refs.shadow.setAttribute('d', shadowPath(currentE));
+      if (p < 1) { sweepRaf = requestAnimationFrame(sweepOut); return; }
+      // sweep done — show aspect content
+      refs.gBull.style.transition = 'opacity .25s ease';
+      refs.gBull.style.opacity = '0.08';
+      populateAspect(hit, L);
+      refs.gAspect.style.transition = 'opacity .3s ease';
+      refs.gAspect.style.opacity = '1';
+    }
+    sweepRaf = requestAnimationFrame(sweepOut);
+  }
+
+  function populateAspect(hit, L) {
     if (hit && !hit.aspect.noLine) {
-      // draw line from Moon to Sun through the inner disc
       const [mx, my] = wheelXY(L.moonLon, R_BODIES);
       const [sx, sy] = wheelXY(L.sunLon, R_BODIES);
       refs.aspectLine.setAttribute('x1', fx(mx));
@@ -461,45 +492,75 @@ export function mountCCLC(container) {
       refs.aspectLine.setAttribute('x2', fx(sx));
       refs.aspectLine.setAttribute('y2', fx(sy));
       refs.aspectLine.setAttribute('stroke', hit.aspect.color);
+      refs.aspectLine.setAttribute('stroke-opacity', '0.85');
       refs.aspectLine.setAttribute('stroke-dasharray', hit.approaching ? 'none' : '8 6');
-      // center info
       const label = hit.approaching ? 'APPROACHING' : 'SEPARATING';
       refs.aspectName.textContent = `The Moon is ${label}`;
       refs.aspectGlyph.textContent = hit.aspect.glyph;
+      refs.aspectGlyph.setAttribute('font-size', '60');
       refs.aspectDeg.textContent = `${hit.aspect.name} the Sun`;
       refs.aspectName.setAttribute('fill', hit.aspect.color);
       refs.aspectGlyph.setAttribute('fill', hit.aspect.color);
       refs.aspectDeg.setAttribute('fill', hit.aspect.color);
     } else if (hit && hit.aspect.noLine) {
-      // conjunction — no line, just label
       refs.aspectLine.setAttribute('stroke-opacity', '0');
       refs.aspectName.textContent = 'The Moon is in';
       refs.aspectGlyph.textContent = hit.aspect.glyph;
+      refs.aspectGlyph.setAttribute('font-size', '60');
       refs.aspectDeg.textContent = `${hit.aspect.name} with the Sun`;
       refs.aspectName.setAttribute('fill', hit.aspect.color);
       refs.aspectGlyph.setAttribute('fill', hit.aspect.color);
       refs.aspectDeg.setAttribute('fill', hit.aspect.color);
     } else {
+      // no Sun-Moon aspect — check Void of Course
       refs.aspectLine.setAttribute('stroke-opacity', '0');
-      refs.aspectName.textContent = '';
-      refs.aspectGlyph.textContent = 'No major aspect';
-      refs.aspectDeg.textContent = '';
-      refs.aspectGlyph.setAttribute('fill', INK_SOFT);
-      refs.aspectGlyph.setAttribute('font-size', '20');
+      const voc = computeVOC(AstroEngine, new Date());
+      if (voc.isVOC) {
+        refs.aspectName.textContent = 'The Moon is currently';
+        refs.aspectGlyph.textContent = 'Void of Course';
+        refs.aspectGlyph.setAttribute('font-size', '24');
+        refs.aspectDeg.textContent = `Until ${vocTimeFmt.format(voc.until)}`;
+        const vocColor = '#e88a3a';
+        refs.aspectName.setAttribute('fill', vocColor);
+        refs.aspectGlyph.setAttribute('fill', vocColor);
+        refs.aspectDeg.setAttribute('fill', vocColor);
+      } else {
+        refs.aspectName.textContent = '';
+        refs.aspectGlyph.textContent = 'No major aspect';
+        refs.aspectGlyph.setAttribute('font-size', '20');
+        refs.aspectDeg.textContent = '';
+        refs.aspectGlyph.setAttribute('fill', INK_SOFT);
+      }
     }
-    refs.gAspect.style.transition = 'opacity .35s ease';
-    refs.gAspect.style.opacity = '1';
-    aspectShowing = true;
   }
+
   function hideAspect() {
-    refs.gBull.style.opacity = '1';
-    refs.gText.style.opacity = '1';
-    refs.gAspect.style.opacity = '0';
-    refs.aspectGlyph.setAttribute('font-size', '60');
-    refs.aspectLine.setAttribute('stroke-opacity', '0.85');
+    if (!aspectShowing) return;
+    if (sweepRaf) { cancelAnimationFrame(sweepRaf); sweepRaf = null; }
     aspectShowing = false;
+    refs.gAspect.style.transition = 'opacity .25s ease';
+    refs.gAspect.style.opacity = '0';
+    refs.gBull.style.transition = 'opacity .25s ease';
+    refs.gBull.style.opacity = '1';
+    // sweep back in: 0 → current elongation
+    const L = getLunation(new Date());
+    const targetE = L.elong;
+    const t0 = performance.now();
+    const dur = 400;
+    function sweepIn(nowT) {
+      const p = Math.min(1, (nowT - t0) / dur);
+      const e = easeOutCubic(p);
+      refs.shadow.setAttribute('d', shadowPath(0.05 + e * (targetE - 0.05)));
+      if (p < 1) requestAnimationFrame(sweepIn);
+      else {
+        refs.signOnMoon.style.opacity = '0.92';
+        refs.moonHalo.style.strokeOpacity = '0.35';
+        refs.gText.style.opacity = '1';
+      }
+    }
+    requestAnimationFrame(sweepIn);
   }
-  // attach to both Sun and Moon body groups
+
   for (const body of [refs.sun, refs.moonB]) {
     body.style.cursor = 'pointer';
     body.addEventListener('mouseenter', showAspect);
