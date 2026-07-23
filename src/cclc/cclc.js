@@ -226,33 +226,54 @@ function buildSVG(root) {
   const tAlt1 = h('text', { x: C, y: 520, 'text-anchor': 'middle', class: 'cc-t cc-alt-line' }, gAlt);
   const tAlt2 = h('text', { x: C, y: 556, 'text-anchor': 'middle', class: 'cc-t cc-alt-line' }, gAlt);
 
-  // Sun body — solid white fill, circumpunct on top, two rotating ray layers
+  // Sun body — white outline glow like the moon, dark orange circumpunct,
+  // two rotating ray layers with radial fade mask, breathing scale
   const sun = h('g', { class: 'cc-body cc-sun' }, gBodies);
-  // rays: two groups of 12 lines each, rotating opposite directions via CSS
-  for (const cls of ['cc-sunrays-a', 'cc-sunrays-b']) {
-    const rg = h('g', { class: cls }, sun);
-    for (let i = 0; i < 12; i++) {
-      const ang = (i * 30) * Math.PI / 180;
-      const x1 = Math.cos(ang) * (BODY_MOON_R + 5), y1 = Math.sin(ang) * (BODY_MOON_R + 5);
-      const x2 = Math.cos(ang) * (BODY_MOON_R + 18), y2 = Math.sin(ang) * (BODY_MOON_R + 18);
-      h('line', { x1: fx(x1), y1: fx(y1), x2: fx(x2), y2: fx(y2),
-        stroke: '#ffcc66', 'stroke-width': i % 2 === 0 ? 2.2 : 1.2,
-        'stroke-opacity': i % 2 === 0 ? 0.22 : 0.12, 'stroke-linecap': 'round' }, rg);
-    }
+
+  // radial mask: rays fade from opaque near sun → transparent at tips
+  const rayMask = h('mask', { id: 'cc-raymask' }, defs);
+  const rayMaskGrad = h('radialGradient', { id: 'cc-raymask-g', cx: '50%', cy: '50%', r: '50%' }, defs);
+  h('stop', { offset: '40%', 'stop-color': '#ffffff' }, rayMaskGrad);
+  h('stop', { offset: '100%', 'stop-color': '#000000' }, rayMaskGrad);
+  h('circle', { cx: 0, cy: 0, r: 50, fill: 'url(#cc-raymask-g)' }, rayMask);
+
+  // layer A: 24 rays, CW
+  const rgA = h('g', { class: 'cc-sunrays-a', mask: 'url(#cc-raymask)' }, sun);
+  for (let i = 0; i < 24; i++) {
+    const ang = (i * 15) * Math.PI / 180;
+    const x1 = Math.cos(ang) * (BODY_MOON_R + 3), y1 = Math.sin(ang) * (BODY_MOON_R + 3);
+    const x2 = Math.cos(ang) * (BODY_MOON_R + 22), y2 = Math.sin(ang) * (BODY_MOON_R + 22);
+    h('line', { x1: fx(x1), y1: fx(y1), x2: fx(x2), y2: fx(y2),
+      stroke: '#ffcc66', 'stroke-width': i % 2 === 0 ? 2.0 : 1.0,
+      'stroke-opacity': i % 2 === 0 ? 0.22 : 0.14, 'stroke-linecap': 'round' }, rgA);
   }
-  h('circle', { cx: 0, cy: 0, r: 30, fill: '#ffffff', opacity: 0.18, class: 'cc-sunhalo', filter: 'url(#cc-glow-sun)' }, sun);
+  // layer B: 12 rays, CCW
+  const rgB = h('g', { class: 'cc-sunrays-b', mask: 'url(#cc-raymask)' }, sun);
+  for (let i = 0; i < 12; i++) {
+    const ang = (i * 30 + 7.5) * Math.PI / 180;
+    const x1 = Math.cos(ang) * (BODY_MOON_R + 4), y1 = Math.sin(ang) * (BODY_MOON_R + 4);
+    const x2 = Math.cos(ang) * (BODY_MOON_R + 20), y2 = Math.sin(ang) * (BODY_MOON_R + 20);
+    h('line', { x1: fx(x1), y1: fx(y1), x2: fx(x2), y2: fx(y2),
+      stroke: '#ffcc66', 'stroke-width': 1.4,
+      'stroke-opacity': 0.16, 'stroke-linecap': 'round' }, rgB);
+  }
+
+  // white glow outline (like the Moon's)
+  h('circle', { cx: 0, cy: 0, r: BODY_MOON_R + 4, fill: 'none', stroke: '#ffffff',
+    'stroke-width': 2.5, 'stroke-opacity': 0.35, filter: 'url(#cc-glow-sun)', class: 'cc-sun-outline' }, sun);
   h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: '#ffffff' }, sun);  // solid white backing
-  const sunInner = h('g', {}, sun);
-  h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: 'none', stroke: '#ff8c1a', 'stroke-width': 5 }, sunInner);
-  h('circle', { cx: 0, cy: 0, r: 4.5, fill: '#ff8c1a' }, sunInner);
+  // dark orange circumpunct — ring and dot same color
+  const SUN_ORANGE = '#d97014';
+  h('circle', { cx: 0, cy: 0, r: BODY_MOON_R - 1, fill: 'none', stroke: SUN_ORANGE, 'stroke-width': 4.5 }, sun);
+  h('circle', { cx: 0, cy: 0, r: 4, fill: SUN_ORANGE }, sun);
+  // outer white ring
   h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.8, 'stroke-opacity': 0.7 }, sun);
-  h('circle', { cx: 0, cy: 0, r: BODY_MOON_R + 4, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.2, 'stroke-opacity': 0.5, filter: 'url(#cc-glow-sun)' }, sun);
 
   // Traveling Moon — phase-accurate disc, three breathing halo layers
   const moonB = h('g', { class: 'cc-body cc-moonb' }, gBodies);
-  h('circle', { cx: 0, cy: 0, r: 34, fill: '#ffffff', opacity: 0.10, class: 'cc-moonbhalo cc-mh-1', filter: 'url(#cc-glow-moonb)' }, moonB);
-  h('circle', { cx: 0, cy: 0, r: 28, fill: '#ffffff', opacity: 0.14, class: 'cc-moonbhalo cc-mh-2', filter: 'url(#cc-glow-moonb)' }, moonB);
-  h('circle', { cx: 0, cy: 0, r: 24, fill: '#e8ecff', opacity: 0.08, class: 'cc-moonbhalo cc-mh-3' }, moonB);
+  h('circle', { cx: 0, cy: 0, r: 34, fill: '#ffffff', opacity: 0.06, class: 'cc-moonbhalo cc-mh-1', filter: 'url(#cc-glow-moonb)' }, moonB);
+  h('circle', { cx: 0, cy: 0, r: 28, fill: '#ffffff', opacity: 0.10, class: 'cc-moonbhalo cc-mh-2', filter: 'url(#cc-glow-moonb)' }, moonB);
+  h('circle', { cx: 0, cy: 0, r: 24, fill: '#e8ecff', opacity: 0.05, class: 'cc-moonbhalo cc-mh-3' }, moonB);
   const moonBDisc = h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: '#e8ecff', class: 'cc-moonb-lit' }, moonB);
   const moonBShadow = h('path', { d: travelMoonShadow(0.05), fill: '#0b081f', 'fill-opacity': 0.92, class: 'cc-moonb-shadow' }, moonB);
   h('circle', { cx: 0, cy: 0, r: BODY_MOON_R, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.8, 'stroke-opacity': 0.7 }, moonB);

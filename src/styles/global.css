@@ -68,25 +68,22 @@ html, body {
 /* ---- ambient life ---- */
 .cclc-svg.live .cc-sheen { animation: cc-drift 72s linear infinite; }
 @keyframes cc-drift { to { transform: rotate(-360deg); } }
-.cclc-svg.live .cc-sunhalo {
-  animation: cc-pulse 7s ease-in-out infinite alternate,
-             cc-flare 47s linear infinite;
+.cclc-svg.live .cc-sun-outline {
+  animation: cc-halo 11s ease-in-out infinite alternate;
 }
-.cclc-svg.live .cc-sunrays-a { animation: cc-spin-cw 90s linear infinite; }
-.cclc-svg.live .cc-sunrays-b { animation: cc-spin-ccw 120s linear infinite; }
+.cclc-svg.live .cc-sunrays-a { animation: cc-spin-cw 90s linear infinite, cc-ray-breathe 8s ease-in-out infinite alternate; }
+.cclc-svg.live .cc-sunrays-b { animation: cc-spin-ccw 120s linear infinite, cc-ray-breathe 12s ease-in-out infinite alternate-reverse; }
 @keyframes cc-spin-cw  { to { transform: rotate(360deg); } }
 @keyframes cc-spin-ccw { to { transform: rotate(-360deg); } }
-.cclc-svg.live .cc-mh-1 { animation: cc-breathe-1 7s ease-in-out infinite alternate; }
-.cclc-svg.live .cc-mh-2 { animation: cc-breathe-2 11s ease-in-out infinite alternate; }
-.cclc-svg.live .cc-mh-3 { animation: cc-breathe-3 5s ease-in-out infinite alternate; }
-@keyframes cc-breathe-1 { from { opacity: .08; r: 32; } to { opacity: .18; r: 36; } }
-@keyframes cc-breathe-2 { from { opacity: .10; r: 26; } to { opacity: .20; r: 30; } }
-@keyframes cc-breathe-3 { from { opacity: .05; r: 22; } to { opacity: .12; r: 26; } }
-.cclc-svg.live .cc-moonbhalo { animation: cc-pulse-moon 9s ease-in-out infinite alternate; }
+@keyframes cc-ray-breathe { from { transform: scale(0.92); opacity: 0.7; } to { transform: scale(1.08); opacity: 1; } }
+.cclc-svg.live .cc-mh-1 { animation: cc-breathe-1 3.5s ease-in-out infinite alternate; }
+.cclc-svg.live .cc-mh-2 { animation: cc-breathe-2 5.5s ease-in-out infinite alternate; }
+.cclc-svg.live .cc-mh-3 { animation: cc-breathe-3 2.5s ease-in-out infinite alternate; }
+@keyframes cc-breathe-1 { from { opacity: .04; r: 32; } to { opacity: .12; r: 36; } }
+@keyframes cc-breathe-2 { from { opacity: .06; r: 26; } to { opacity: .16; r: 30; } }
+@keyframes cc-breathe-3 { from { opacity: .03; r: 22; } to { opacity: .09; r: 26; } }
 .cclc-svg.live .cc-moonhalo  { animation: cc-halo 11s ease-in-out infinite alternate; }
 @keyframes cc-pulse { from { opacity: .14; } to { opacity: .32; } }
-@keyframes cc-pulse-moon { from { opacity: .12; } to { opacity: .30; } }
-@keyframes cc-flare { 0%, 95%, 100% { opacity: .16; } 96.6% { opacity: .55; } }
 @keyframes cc-halo  { from { stroke-opacity: .22; } to { stroke-opacity: .5; } }
 
 .cc-paused .cclc-svg *, .cc-paused #stars { animation-play-state: paused !important; }
