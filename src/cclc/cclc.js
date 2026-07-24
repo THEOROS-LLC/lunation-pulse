@@ -687,27 +687,21 @@ export function mountCCLC(container) {
       const fade = (el, to, dur = D) => el.animate(
         { opacity: [getComputedStyle(el).opacity, to] },
         { duration: dur, fill: 'both', easing: 'ease-in-out' });
-      // ring dissolves to slim band
+      // wedges shrink to slim band
       for (const w of refs.wedges) fade(w, 0, 400);
       for (const g of refs.glyphsIn) fade(g, 0, 350);
       fade(refs.gSheen, 0, 350);
       fade(refs.gSlim, 1);
-      fade(refs.gQuarters, 1, D + 150);
-      // bull's-eye + big texts give way; compact moon takes the top
-      fade(refs.gBull, 0, 400);
-      fade(refs.gCompact, 1, D + 100);
-      // texts move to open-mode positions
-      const pos = { tDate: 128, tTime: 170, tPhase: 858, tDeg: 894 };
-      for (const [k, y] of Object.entries(pos)) {
-        const el = refs[k];
-        el.animate({ opacity: [1, 0] }, { duration: 220, fill: 'forwards' })
-          .onfinish = () => {
-            el.setAttribute('y', y);
-            el.animate({ opacity: [0, 1] }, { duration: 260, fill: 'forwards' });
-          };
-      }
-      // bodies migrate to the rim
-      const t0 = performance.now(), from = ticker.state.bodyR, to = 434;
+      // bull's-eye moon + sign glyph fade out completely; text stays
+      fade(refs.moonDisc, 0, 400);
+      fade(refs.shadow, 0, 400);
+      fade(refs.signOnMoon, 0, 300);
+      refs.moonHalo.style.transition = 'stroke-opacity .4s ease';
+      refs.moonHalo.style.strokeOpacity = '0';
+      // hide quarters
+      fade(refs.gQuarters, 0, 200);
+      // bodies migrate ABOVE the ring (outer perimeter)
+      const t0 = performance.now(), from = ticker.state.bodyR, to = R_PERIM;
       (function mig(nowT) {
         const p = Math.min(1, (nowT - t0) / 600);
         ticker.state.bodyR = from + (to - from) * easeOutCubic(p);
@@ -745,17 +739,12 @@ export function mountCCLC(container) {
       fade(refs.gSheen, 1);
       fade(refs.gSlim, 0, 350);
       fade(refs.gQuarters, 0, 300);
-      fade(refs.gBull, 1, 500);
-      fade(refs.gCompact, 0, 300);
-      const pos = { tDate: 340, tTime: 378, tPhase: 640, tDeg: 676 };
-      for (const [k, y] of Object.entries(pos)) {
-        const el = refs[k];
-        el.animate({ opacity: [1, 0] }, { duration: 200, fill: 'forwards' })
-          .onfinish = () => {
-            el.setAttribute('y', y);
-            el.animate({ opacity: [0, 1] }, { duration: 260, fill: 'forwards' });
-          };
-      }
+      // restore bull's-eye
+      fade(refs.moonDisc, 1, 500);
+      fade(refs.shadow, 1, 500);
+      fade(refs.signOnMoon, 0.92, 500);
+      refs.moonHalo.style.strokeOpacity = '0.35';
+      // bodies return to inner ring
       const t0 = performance.now(), from = ticker.state.bodyR, to = R_BODIES;
       (function mig(nowT) {
         const p = Math.min(1, (nowT - t0) / 600);

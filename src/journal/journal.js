@@ -235,8 +235,7 @@ export async function initJournal() {
   let activeSection = 'dream';
 
   if (clock) clock.setOpen({
-    sections: SECTIONS, active: null,
-    onSelect: (key) => { activeSection = key; render(); },
+    sections: [], active: null, onSelect: () => {},
   });
 
   async function load() {
@@ -245,7 +244,7 @@ export async function initJournal() {
   }
 
   function render() {
-    if (clock) clock.setOpen({ sections: SECTIONS, active: null, onSelect: () => {} });
+    if (clock) clock.setOpen({ sections: [], active: null, onSelect: () => {} });
     room.textContent = '';
     // header row: identity + logout
     const top = document.createElement('div');
