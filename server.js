@@ -25,7 +25,7 @@ import { getLunation } from './src/cclc/lunation.js';
 
 const PORT = Number(process.env.PORT || 8787);
 const ADMIN_KEY = process.env.ADMIN_KEY || '';
-const DB_PATH = process.env.DB_PATH || './record.db';
+const DB_PATH = process.env.DB_PATH || '/home/u452593326/record.db';
 const PUBLIC_READ = process.env.PUBLIC_READ === 'true';
 const DIST = path.resolve('./dist');
 if (!ADMIN_KEY) { console.error('ADMIN_KEY is required.'); process.exit(1); }

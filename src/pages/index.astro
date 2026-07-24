@@ -6,7 +6,7 @@ const L = getLunation(new Date());
 const sunIn = L.sunLon % 30;
 const sunSign = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'][Math.floor(L.sunLon / 30)];
 const pad = n => String(n).padStart(2, '0');
-const skyNow = `The Moon is at ${L.deg}\u00b0${pad(L.arcmin)}\u2032 ${L.sign}, ${L.phase.toLowerCase()}. Sun at ${Math.floor(sunIn)}\u00b0${pad(Math.floor((sunIn % 1) * 60))}\u2032 ${sunSign}. Kept to the arcminute, every second.`;
+const skyNow = `The Moon is at ${L.deg}\u00b0${pad(L.arcmin)}\u2032 ${L.sign}, ${L.phase}. The Sun is at ${Math.floor(sunIn)}\u00b0${pad(Math.floor((sunIn % 1) * 60))}\u2032 ${sunSign}. Kept in sync with realtime to the exact second.`;
 const built = new Date().toISOString();
 const ld = JSON.stringify({'@context':'https://schema.org','@graph':[
   {'@type':'WebSite','@id':'https://lunarpulse.ai/#site',name:'Lunar Pulse',url:'https://lunarpulse.ai/',description:'The sky, kept as a clock.'},
@@ -17,12 +17,12 @@ const ld = JSON.stringify({'@context':'https://schema.org','@graph':[
   <Cclc />
   <header class="page-aside page-aside-left masthead">
     <h1>Lunar Pulse</h1>
-    <p>Realtime Lunation Clock</p>
+    <p>The Geometry of Natural Time in Real Time</p>
   </header>
   <div class="page-aside page-aside-right">
     <nav class="knights">
       <a href="/journal/">Lunation Journal</a>
-      <a href="/circle/">Clairsentient Support Circle</a>
+      
     </nav>
     <p class="snapshot">{skyNow}</p>
   </div>

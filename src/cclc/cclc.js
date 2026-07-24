@@ -260,7 +260,7 @@ function buildSVG(root) {
     const x2 = Math.cos(ang) * (BODY_MOON_R + 16), y2 = Math.sin(ang) * (BODY_MOON_R + 16);
     h('line', { x1: fx(x1), y1: fx(y1), x2: fx(x2), y2: fx(y2),
       stroke: '#ffcc66', 'stroke-width': 1.6,
-      'stroke-opacity': 0.14, 'stroke-linecap': 'round' }, rgA);
+      'stroke-opacity': 0.28, 'stroke-linecap': 'round' }, rgA);
   }
   // layer B: 12 rays offset, CCW, less opaque
   const rgB = h('g', { class: 'cc-sunrays-b' }, sun);
@@ -270,7 +270,7 @@ function buildSVG(root) {
     const x2 = Math.cos(ang) * (BODY_MOON_R + 14), y2 = Math.sin(ang) * (BODY_MOON_R + 14);
     h('line', { x1: fx(x1), y1: fx(y1), x2: fx(x2), y2: fx(y2),
       stroke: '#ffcc66', 'stroke-width': 1.0,
-      'stroke-opacity': 0.08, 'stroke-linecap': 'round' }, rgB);
+      'stroke-opacity': 0.18, 'stroke-linecap': 'round' }, rgB);
   }
   // white glow outline
   h('circle', { cx: 0, cy: 0, r: BODY_MOON_R + 4, fill: 'none', stroke: '#ffffff',
@@ -523,7 +523,8 @@ export function mountCCLC(container) {
     const startE = L.elong;
     const t0 = performance.now();
     const dur = 500;
-    refs.signOnMoon.style.transition = 'opacity .3s ease';
+    refs.signOnMoon.style.transition = 'opacity .2s ease';
+    refs.signOnMoon.setAttribute('opacity', '0');
     refs.signOnMoon.style.opacity = '0';
     refs.moonHalo.style.transition = 'stroke-opacity .3s ease';
     refs.moonHalo.style.strokeOpacity = '0';

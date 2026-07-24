@@ -45,36 +45,121 @@ const whenStamp = iso => new Intl.DateTimeFormat('en-US', {
 function authPanel(onAuthed) {
   const el = document.createElement('div');
   el.className = 'jr-auth';
-  el.innerHTML = `
-    <h2 class="jr-h">The Lunation Journal</h2>
-    <p class="jr-sub">Your record, kept under the actual Moon.</p>
-    <div class="jr-tabs" role="tablist">
-      <button class="jr-tab on" data-t="in">Sign in</button>
-      <button class="jr-tab" data-t="up">Begin a journal</button>
-    </div>
-    <form class="jr-form">
-      <input name="email" type="email" placeholder="email" required autocomplete="email" />
-      <input name="password" type="password" placeholder="password" required autocomplete="current-password" />
-      <input name="name" type="text" placeholder="name (optional \u2014 blank stays anonymous)" class="jr-namefield" hidden />
-      <button type="submit" class="cta">Enter</button>
-      <p class="jr-msg" role="status"></p>
-    </form>`;
-  let mode = 'in';
-  const msg = el.querySelector('.jr-msg');
-  el.querySelectorAll('.jr-tab').forEach(t => t.addEventListener('click', () => {
-    mode = t.dataset.t;
-    el.querySelectorAll('.jr-tab').forEach(x => x.classList.toggle('on', x === t));
-    el.querySelector('.jr-namefield').hidden = mode === 'in';
-    msg.textContent = '';
-  }));
-  el.querySelector('form').addEventListener('submit', async e => {
-    e.preventDefault();
-    const f = new FormData(e.target);
-    const body = { email: f.get('email'), password: f.get('password'), name: f.get('name') };
-    const r = mode === 'up' ? await api.signup(body) : await api.login(body);
-    if (!r.ok) { msg.textContent = r.error || 'something slipped'; return; }
-    onAuthed(r.member);
-  });
+  let view = 'main'; // main | tiers | signin
+
+  function renderMain() {
+    el.innerHTML = `
+      <h2 class="jr-h">The Lunation Journal</h2>
+      <p class="jr-sub">Your record, kept under the actual Moon.</p>
+      <div class="jr-btns">
+        <button class="cta" data-v="signin">Sign In</button>
+        <button class="cta" data-v="tiers">Create an Account</button>
+      </div>`;
+    el.querySelector('[data-v="signin"]').addEventListener('click', () => { view = 'signin'; render(); });
+    el.querySelector('[data-v="tiers"]').addEventListener('click', () => { view = 'tiers'; render(); });
+  }
+
+  function renderTiers() {
+    el.innerHTML = `
+      <h2 class="jr-h">Choose Your Path</h2>
+      <div class="jr-tierlist">
+        <div class="jr-tier" data-t="demo">
+          <p class="jr-tier-price">FREE</p>
+          <p class="jr-tier-name">Temporary Demo Membership</p>
+          <p class="jr-tier-desc">Seeing is Believing</p>
+        </div>
+        <div class="jr-tier" data-t="journal">
+          <p class="jr-tier-price">$33<span>/mo</span></p>
+          <p class="jr-tier-name">Personal Lunation Journal</p>
+          <p class="jr-tier-desc">Observe, Document & Organize Your Life in Sync with The Moon. Share & Connect With Other Members.</p>
+        </div>
+        <div class="jr-tier featured" data-t="natal">
+          <p class="jr-tier-price">$66<span>/mo</span></p>
+          <p class="jr-tier-name">Advanced Lunation Journal with Natal Chart Integration & Reports</p>
+          <p class="jr-tier-desc">Combine your birth info paired with the Lunation Clock & Your Lived Experiences so to Learn Astrology Through the Reflection of Your Actual Life. No Textbooks Required.</p>
+        </div>
+      </div>
+      <button class="jr-mini jr-back">&larr; back</button>`;
+    el.querySelectorAll('.jr-tier').forEach(t => t.addEventListener('click', () => {
+      const tier = t.dataset.t;
+      if (tier === 'journal') {
+        const link = el.dataset.stripe33;
+        if (link) { window.open(link, '_blank'); }
+        view = 'signup'; render(tier);
+      } else if (tier === 'natal') {
+        const link = el.dataset.stripe66;
+        if (link) { window.open(link, '_blank'); }
+        view = 'signup'; render(tier);
+      } else {
+        view = 'signup'; render('demo');
+      }
+    }));
+    el.querySelector('.jr-back').addEventListener('click', () => { view = 'main'; render(); });
+  }
+
+  function renderSignup(tier) {
+    const tierLabel = tier === 'natal' ? 'Advanced Journal' : tier === 'journal' ? 'Personal Journal' : 'Demo';
+    el.innerHTML = `
+      <h2 class="jr-h">Create Your ${escapeHtml(tierLabel)} Account</h2>
+      <form class="jr-form">
+        <input name="email" type="email" placeholder="email" required autocomplete="email" />
+        <input name="password" type="password" placeholder="password (8+ characters)" required autocomplete="new-password" />
+        <input name="name" type="text" placeholder="display name (optional \u2014 blank stays anonymous)" />
+        <button type="submit" class="cta">Create Account</button>
+        <p class="jr-msg" role="status"></p>
+      </form>
+      <button class="jr-mini jr-back">&larr; back</button>`;
+    el.querySelector('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const f = new FormData(e.target);
+      const r = await api.signup({ email: f.get('email'), password: f.get('password'), name: f.get('name') });
+      const msg = el.querySelector('.jr-msg');
+      if (!r.ok) { msg.textContent = r.error || 'something slipped'; return; }
+      view = 'welcome'; render();
+    });
+    el.querySelector('.jr-back').addEventListener('click', () => { view = 'tiers'; render(); });
+  }
+
+  function renderSignin() {
+    el.innerHTML = `
+      <h2 class="jr-h">Sign In</h2>
+      <form class="jr-form">
+        <input name="email" type="email" placeholder="email" required autocomplete="email" />
+        <input name="password" type="password" placeholder="password" required autocomplete="current-password" />
+        <button type="submit" class="cta">Enter</button>
+        <p class="jr-msg" role="status"></p>
+      </form>
+      <button class="jr-mini jr-back">&larr; back</button>`;
+    el.querySelector('form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const f = new FormData(e.target);
+      const r = await api.login({ email: f.get('email'), password: f.get('password') });
+      const msg = el.querySelector('.jr-msg');
+      if (!r.ok) { msg.textContent = r.error || 'something slipped'; return; }
+      onAuthed(r.member);
+    });
+    el.querySelector('.jr-back').addEventListener('click', () => { view = 'main'; render(); });
+  }
+
+  function renderWelcome() {
+    el.innerHTML = `
+      <h2 class="jr-h">Welcome</h2>
+      <p class="jr-sub">Congratulations \u2014 You are one of the early birds!</p>
+      <p class="jr-sub">This website is under construction. The Members Portal will be online in the next 24 hours.</p>
+      <p class="jr-sub">Refresh this page or reload lunarpulse.ai to check on the current status. Your membership features will be online and working in the hours to come.</p>
+      <p class="jr-sub">Thank you for participating \u2014 I am very excitedly looking forward.</p>
+      <p class="jr-sub" style="margin-top:.6rem">\u2014 Timothy</p>
+      <button class="cta" onclick="location.reload()">Refresh</button>`;
+  }
+
+  function render(tierArg) {
+    if (view === 'main') renderMain();
+    else if (view === 'tiers') renderTiers();
+    else if (view === 'signup') renderSignup(tierArg || 'demo');
+    else if (view === 'signin') renderSignin();
+    else if (view === 'welcome') renderWelcome();
+  }
+  render();
   return el;
 }
 
